@@ -3,6 +3,7 @@ package com.zxl.materialStorage.common.api;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.logging.log4j.status.StatusConsoleListener;
 
 import java.io.Serializable;
 
@@ -64,5 +65,9 @@ public class ApiResult<T> implements Serializable {
      */
     public static <T> ApiResult<T> error(Integer code, String message,T t) {
         return new ApiResult<T>(code, message, null);
+    }
+
+    public static <T> ApiResult<T> blank(){
+        return new ApiResult<T>(ApiCode.BLANK.getCode(), ApiCode.BLANK.getMessage(),null);
     }
 }

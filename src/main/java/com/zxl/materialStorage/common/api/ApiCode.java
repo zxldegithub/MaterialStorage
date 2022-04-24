@@ -12,8 +12,9 @@ import lombok.Data;
 
 @AllArgsConstructor
 public enum ApiCode implements ICode{
-    SUCCESS(1,"操作成功"),
-    ERROR(0,"操作失败");
+    SUCCESS(2,"操作成功"),
+    ERROR(5,"操作失败"),
+    BLANK(0,"参数为空");
 
     private final Integer code;
     private final String message;

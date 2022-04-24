@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url:
-    username:
-    password:
-    driver-class-name:
+    url: jdbc:mysql://114.215.41.41:3306/mm_er?useSSL=false&useUnicode=true&characterEncoding=utf8
+    username: root
+    password: madeinheaven
+    driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
 server:
   port: 80
