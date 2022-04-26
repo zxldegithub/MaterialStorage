@@ -5,6 +5,18 @@ spring:
     password: madeinheaven
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
+  redis:
+    host: 114.215.41.41
+    port: 6379
+    password: nianta0121..
+    database: 0
+    lettuce:
+      pool:
+        max-idle: 8
+        max-active: 8
+        max-wait: 30000
+        min-idle: 0
+
 server:
   port: 80
 

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.zxl.materialStorage.model.pojo.ErStorage;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @className: EsService
@@ -18,5 +19,6 @@ public interface EsService extends IService<ErStorage> {
     void deleteOne(String esId);
     void deleteMany(List<String> esIdList);
     void updateOne(ErStorage erStorage) throws Exception;
-    Page<ErStorage> selectAll(int pageIndex, int pageSize);
+    Page<ErStorage> selectByPage(Integer pageIndex, Integer pageSize);
+    Set<ErStorage> selectListFromRedis();
 }

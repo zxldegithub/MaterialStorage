@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @className: EsController
@@ -33,8 +34,8 @@ public class EsController {
             }
             esService.insertNewOne(erStorage);
         }catch (Exception e){
-            log.error("新增物资库操作失败",e);
-            return ApiResult.error(500,"新增物资库操作失败",e);
+            log.error("新增物资库失败",e);
+            return ApiResult.error(500,"新增物资库失败",e);
         }
         return ApiResult.success();
     }
@@ -47,8 +48,8 @@ public class EsController {
             }
             esService.deleteOne(esId);
         }catch (Exception e){
-            log.error("删除物资库操作失败",e);
-            return ApiResult.error(500,"删除物资库操作失败",e);
+            log.error("删除物资库失败",e);
+            return ApiResult.error(500,"删除物资库失败",e);
         }
         return ApiResult.success();
     }
@@ -81,10 +82,15 @@ public class EsController {
         return ApiResult.success();
     }
 
-    @GetMapping("/selectAll")
-    public ApiResult<Page<ErStorage>> selectAll(@RequestParam(value = "pageIndex",defaultValue = "1") int pageIndex,
-                                     @RequestParam(value = "pageSize",defaultValue = "10") int pageSize){
-        Page<ErStorage> erStoragePage = esService.selectAll(pageIndex, pageSize);
+    @GetMapping("/selectByPage")
+    public ApiResult<Page<ErStorage>> selectByPage(@RequestParam(value = "pageIndex",defaultValue = "1") Integer pageIndex,
+                                     @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
+        Page<ErStorage> erStoragePage = esService.selectByPage(pageIndex, pageSize);
         return ApiResult.success(erStoragePage);
+    }
+
+    @GetMapping("/selectListFromRedis")
+    public ApiResult<Set<ErStorage>> selectListFromRedis(){
+        return ApiResult.success(esService.selectListFromRedis());
     }
 }
