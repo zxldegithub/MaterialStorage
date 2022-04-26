@@ -36,7 +36,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     public void insertNewOne(ErStorage erStorage) throws Exception {
         //从Redis中检查是否已经存在此编号的物资库
         ErStorage existErStorage = null;
-        Set<ErStorage> erStorages = selectListFromRedis();
+        Set<ErStorage> erStorages = selectSetFromRedis();
         for (ErStorage storage : erStorages) {
             if (erStorage.getEsNo().equals(storage.getEsNo())) {
                 existErStorage = storage;
@@ -66,7 +66,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     public void deleteOne(String esId) {
         try {
             removeById(esId);
-            Set<ErStorage> erStorages = selectListFromRedis();
+            Set<ErStorage> erStorages = selectSetFromRedis();
             erStorages.removeIf(erStorage -> esId.equals(erStorage.getEsId()));
             updateCache(erStorages);
         } catch (Exception e) {
@@ -79,7 +79,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     public void deleteMany(List<String> esIdList) {
         try {
             removeByIds(esIdList);
-            Set<ErStorage> erStorages = selectListFromRedis();
+            Set<ErStorage> erStorages = selectSetFromRedis();
             Iterator<ErStorage> iterator = erStorages.iterator();
             while (iterator.hasNext()) {
                 ErStorage erStorage = iterator.next();
@@ -99,7 +99,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     public void updateOne(ErStorage erStorage) throws Exception {
         //根据ID从Redis中获取将要更新的物资库
         ErStorage existErStorage = null;
-        Set<ErStorage> erStorages = selectListFromRedis();
+        Set<ErStorage> erStorages = selectSetFromRedis();
         Iterator<ErStorage> iterator = erStorages.iterator();
         while (iterator.hasNext()) {
             ErStorage storage = iterator.next();
@@ -148,7 +148,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     }
 
     @Override
-    public Set<ErStorage> selectListFromRedis() {
+    public Set<ErStorage> selectSetFromRedis() {
         //从redis中获取物资库数据，若存在直接返回，若不存在则先存入redis再返回
         SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
         Set<Object> erStorages = setOperations.members("erStorages");

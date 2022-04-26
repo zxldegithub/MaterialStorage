@@ -20,5 +20,5 @@ public interface EsService extends IService<ErStorage> {
     void deleteMany(List<String> esIdList);
     void updateOne(ErStorage erStorage) throws Exception;
     Page<ErStorage> selectByPage(Integer pageIndex, Integer pageSize);
-    Set<ErStorage> selectListFromRedis();
+    Set<ErStorage> selectSetFromRedis();
 }
