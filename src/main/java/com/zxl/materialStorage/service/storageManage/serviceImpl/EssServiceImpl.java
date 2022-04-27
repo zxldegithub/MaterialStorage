@@ -50,11 +50,19 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
             //补充仓库信息并存入数据库
             esStoreroom.setEssTimeValue(SystemUtil.getTime()).setEssTs(SystemUtil.getTime());
             save(esStoreroom);
-            //同时更新上级物资库数据
-            ErStorage existErStorage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
+            //同时从Redis中获取上级物资信息库
+            Set<ErStorage> erStorages = esService.selectSetFromRedis();
+            ErStorage existErStorage = null;
+            for (ErStorage erStorage : erStorages) {
+                if (esStoreroom.getEsNo().equals(erStorage.getEsNo())){
+                    existErStorage = erStorage;
+                    break;
+                }
+            }
+            //获取到后进行更新
             if (ObjectUtil.isNotNull(existErStorage)) {
                 existErStorage.setEsStoreroomNumber(existErStorage.getEsStoreroomNumber() + 1).setEsTs(SystemUtil.getTime());
-                esService.updateById(existErStorage);
+                esService.updateOne(existErStorage);
                 //更新完成后加入缓存
                 redisTemplate.opsForSet().add("esStorerooms", esStoreroom);
             } else {
@@ -73,7 +81,7 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
             EsStoreroom esStoreroom = getById(essId);
             ErStorage erStorage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
             erStorage.setEsStoreroomNumber(erStorage.getEsStoreroomNumber() - 1);
-            esService.updateById(erStorage);
+            esService.updateOne(erStorage);
             //再删除仓库数据同时更新缓存
             Set<EsStoreroom> esStoreroomSet = selectSetFromRedis();
             esStoreroomSet.removeIf(storeroom -> essId.equals(storeroom.getEssId()));
@@ -99,7 +107,7 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
             for (String esNo : esNOSet) {
                 ErStorage erStorage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esNo));
                 erStorage.setEsStoreroomNumber(erStorage.getEsStoreroomNumber()-esNoMap.get(esNo));
-                esService.updateById(erStorage);
+                esService.updateOne(erStorage);
             }
             //再删除仓库数据
             removeByIds(essIdList);
@@ -111,8 +119,19 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateOne(EsStoreroom esStoreroom) {
-        EsStoreroom existEsStoreroom = getById(esStoreroom.getEssId());
+    public void updateOne(EsStoreroom esStoreroom) throws Exception {
+        //从Redis中获取现存的仓库信息，并删除
+        EsStoreroom existEsStoreroom = null;
+        Set<EsStoreroom> esStorerooms = selectSetFromRedis();
+        Iterator<EsStoreroom> iterator = esStorerooms.iterator();
+        while (iterator.hasNext()) {
+            EsStoreroom storeroom = iterator.next();
+            if (esStoreroom.getEssId().equals(storeroom.getEssId())){
+                existEsStoreroom = storeroom;
+                iterator.remove();
+                break;
+            }
+        }
         //若仓库对应上级物资库没有发生更改，则不修改物资库数据
         if (!existEsStoreroom.getEsNo().equals(esStoreroom.getEsNo())) {
             //更新仓库之前所在物资库的数据
@@ -124,9 +143,19 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
             List<ErStorage> erStorageList = new ArrayList<>();
             erStorageList.add(erStorageFront);
             erStorageList.add(erStorageBack);
-            esService.updateBatchById(erStorageList);
+            for (ErStorage erStorage : erStorageList) {
+                esService.updateOne(erStorage);
+            }
         }
-        updateById(esStoreroom);
+        //构建新对象
+        existEsStoreroom.setEssNo(esStoreroom.getEssNo()).setEsNo(esStoreroom.getEsNo()).setEssLocation(esStoreroom.getEssLocation())
+                .setEssUse(esStoreroom.getEssUse()).setEssArea(esStoreroom.getEssArea())
+                .setEssFloorNumber(esStoreroom.getEssFloorNumber()).setEssSpaceNumber(esStoreroom.getEssSpaceNumber())
+                .setEssTs(SystemUtil.getTime());
+        //更新数据库和缓存中的仓库信息
+        updateById(existEsStoreroom);
+        esStorerooms.add(existEsStoreroom);
+        updateCache(esStorerooms);
     }
 
     @Override

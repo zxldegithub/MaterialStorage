@@ -19,7 +19,7 @@ public interface EssService extends IService<EsStoreroom> {
     void insertNewOne(EsStoreroom esStoreroom) throws Exception;
     void deleteOne(String essId);
     void deleteMany(List<String> essIdList);
-    void updateOne(EsStoreroom esStoreroom);
+    void updateOne(EsStoreroom esStoreroom) throws Exception;
     Page<EsStoreroom> selectByPage(Integer pageIndex,Integer pageSize);
     Set<EsStoreroom> selectSetFromRedis();
 }

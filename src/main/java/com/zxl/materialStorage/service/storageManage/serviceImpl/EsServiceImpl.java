@@ -98,7 +98,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
 
     @Override
     public void updateOne(ErStorage erStorage) throws Exception {
-        //根据ID从Redis中获取将要更新的物资库
+        //从Redis中获取物资库信息，并删除
         ErStorage existErStorage = null;
         Set<ErStorage> erStorages = selectSetFromRedis();
         Iterator<ErStorage> iterator = erStorages.iterator();
@@ -126,10 +126,13 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
             }
             //构建新对象
             existErStorage.setEsNo(erStorage.getEsNo()).setEsLocation(erStorage.getEsLocation()).setEsTypeCode(esTypeCode)
-                    .setEsTypeName(erStorage.getEsTypeName()).setEsIntroduce(erStorage.getEsIntroduce()).setEsStatusCode(esStatusCode)
+                    .setEsTypeName(erStorage.getEsTypeName()).setEsStoreroomNumber(erStorage.getEsStoreroomNumber())
+                    .setEsOutSpaceNumber(erStorage.getEsOutSpaceNumber())
+                    .setEsIntroduce(erStorage.getEsIntroduce()).setEsStatusCode(esStatusCode)
                     .setEsStatusName(erStorage.getEsStatusName()).setEsTs(SystemUtil.getTime());
             //更新数据库和Redis中的物资库信息
             updateById(existErStorage);
+            erStorages.add(existErStorage);
             updateCache(erStorages);
         } else {
             throw new Exception("未查询到该条物资库记录");
