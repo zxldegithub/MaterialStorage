@@ -23,7 +23,7 @@ import org.springframework.data.annotation.Id;
 @Builder
 @Accessors(chain = true)
 @TableName("er_storage_storeroom")
-public class ESStoreroom {
+public class EsStoreroom {
     @TableId(type = IdType.ASSIGN_ID)
     private String essId;
     private String essNo;

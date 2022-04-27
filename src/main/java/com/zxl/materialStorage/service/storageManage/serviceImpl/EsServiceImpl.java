@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @className: ErServiceImpl
@@ -145,6 +146,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
         for (ErStorage erStorage : erStorages) {
             redisTemplate.opsForSet().add("erStorages",erStorage);
         }
+        redisTemplate.expire("erStorages",30,TimeUnit.MINUTES);
     }
 
     @Override
@@ -162,6 +164,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
                 setOperations.add("erStorages",erStorage);
                 erStorageSet.add(erStorage);
             }
+            redisTemplate.expire("erStorages",30, TimeUnit.MINUTES);
         }
         return erStorageSet;
     }

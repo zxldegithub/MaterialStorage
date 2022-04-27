@@ -1,8 +1,7 @@
 package com.zxl.materialStorage.mapper.storageManage;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.fasterxml.jackson.databind.ser.Serializers;
-import com.zxl.materialStorage.model.pojo.ESStoreroom;
+import com.zxl.materialStorage.model.pojo.EsStoreroom;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -12,6 +11,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @date: 2022/4/22
  **/
 @Mapper
-public interface EssMapper extends BaseMapper<ESStoreroom> {
+public interface EssMapper extends BaseMapper<EsStoreroom> {
 
 }
