@@ -11,25 +11,32 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 /**
- * @className: EssSpace
+ * @className: EsssShelves
  * @description: TODO
  * @author: ZhangXiaolei
- * @date: 2022/4/27
+ * @date: 2022/4/28
  **/
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("er_storage_storeroom_space")
-public class EssSpace {
+@TableName("er_storage_storeroom_space_shelves")
+public class EsssShelves {
     @TableId(type = IdType.ASSIGN_ID)
-    private String esssId;
+    private String essssId;
+    private String essssNo;
     private String esssNo;
     private String essNo;
     private String esNo;
-    private Integer esssFloorLocation;
-    private String esssTimeValue;
+    private String essssSpecifications;
+    private String essssFloorFirst;
+    private String essssFloorSecond;
+    private String essssFloorThird;
+    private String essssFloorFourth;
+    private String essssFloorFifth;
+    private String essssTimeValue;
     @TableField("ts")
-    private String esssTs;
+    private String essssTs;
 }

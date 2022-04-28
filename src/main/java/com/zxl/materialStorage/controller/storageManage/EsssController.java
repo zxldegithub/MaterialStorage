@@ -1,6 +1,7 @@
 package com.zxl.materialStorage.controller.storageManage;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zxl.materialStorage.common.api.ApiResult;
 import com.zxl.materialStorage.model.pojo.EssSpace;
@@ -42,27 +43,49 @@ public class EsssController {
 
     @DeleteMapping("/deleteOne")
     public ApiResult<Object> deleteOne(@RequestParam(value = "esssId") String esssId){
-
+        try {
+            if (StringUtils.isEmpty(esssId)){
+                return ApiResult.blank();
+            }
+            esssService.deleteOne(esssId);
+        } catch (Exception e) {
+            log.error("删除库区失败",e);
+            return ApiResult.error(500,"删除库区失败",e);
+        }
+        return ApiResult.success();
     }
 
     @DeleteMapping("/deleteMany")
     public ApiResult<Object> deleteMany(@RequestBody List<String> esssIdList){
-
+        try {
+            if (ObjectUtil.isEmpty(esssIdList)){
+                return ApiResult.blank();
+            }
+            esssService.deleteMany(esssIdList);
+        } catch (Exception e) {
+            log.error("批量删除库区失败",e);
+            return ApiResult.error(500,"批量删除库区失败",e);
+        }
+        return ApiResult.success();
     }
 
     @PostMapping("/updateOne")
     public ApiResult<Object> updateOne(@RequestBody EssSpace essSpace){
-
+        try {
+            if (ObjectUtil.isNull(essSpace)){
+                return ApiResult.blank();
+            }
+            esssService.updateOne(essSpace);
+        } catch (Exception e) {
+            log.error("更新获取信息失败");
+            return ApiResult.error(500,"更新获取信息失败",e);
+        }
+        return ApiResult.success();
     }
 
     @GetMapping("/seleteByPage")
     public ApiResult<Page<EssSpace>> selectByPage(@RequestParam(value = "pageIndex",defaultValue = "1") Integer pageIndex,
                                                   @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
-
-    }
-
-    @GetMapping("/seleteSetFromRedis")
-    public ApiResult<Set<EssSpace>> seleteSetFromRedis(){
-
+        return ApiResult.success(esssService.selectByPage(pageIndex,pageSize));
     }
 }

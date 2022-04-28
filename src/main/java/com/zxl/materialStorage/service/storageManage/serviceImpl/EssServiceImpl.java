@@ -82,6 +82,8 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
             ErStorage erStorage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
             erStorage.setEsStoreroomNumber(erStorage.getEsStoreroomNumber() - 1);
             esService.updateOne(erStorage);
+            //再删除下级库区的数据
+
             //再删除仓库数据同时更新缓存
             Set<EsStoreroom> esStoreroomSet = selectSetFromRedis();
             esStoreroomSet.removeIf(storeroom -> essId.equals(storeroom.getEssId()));
@@ -96,11 +98,19 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
     @Transactional(rollbackFor = Exception.class)
     public void deleteMany(List<String> essIdList) {
         try {
-            List<EsStoreroom> esStoreroomList = listByIds(essIdList);
+            //从Redis中获取仓库信息
             HashMap<String, Integer> esNoMap = new HashMap<>();
-            for (EsStoreroom esStoreroom : esStoreroomList) {
-                Integer counts = esNoMap.get(esStoreroom.getEsNo());
-                esNoMap.put(esStoreroom.getEsNo(), counts == null ? 1 : ++counts);
+            Set<EsStoreroom> esStorerooms = selectSetFromRedis();
+            Iterator<EsStoreroom> iterator = esStorerooms.iterator();
+            while (iterator.hasNext()) {
+                EsStoreroom storeroom = iterator.next();
+                for (String essId : essIdList) {
+                    if (essId.equals(storeroom.getEssId())){
+                        Integer counts = esNoMap.get(storeroom.getEsNo());
+                        esNoMap.put(storeroom.getEsNo(), counts == null ? 1 : ++counts);
+                    }
+                    iterator.remove();
+                }
             }
             //先修改上级物资库的数据
             Set<String> esNOSet = esNoMap.keySet();
@@ -109,8 +119,9 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
                 erStorage.setEsStoreroomNumber(erStorage.getEsStoreroomNumber()-esNoMap.get(esNo));
                 esService.updateOne(erStorage);
             }
-            //再删除仓库数据
+            //再删除仓库数据，并更新Redis数据
             removeByIds(essIdList);
+            updateCache(esStorerooms);
         } catch (Exception e) {
             log.error("删除多个仓库时出错", e);
         }

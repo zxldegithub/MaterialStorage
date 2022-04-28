@@ -16,9 +16,8 @@ import java.util.Set;
 
 public interface EsssService extends IService<EssSpace> {
     void insertNewOne(EssSpace essSpace) throws Exception;
-    void deleteOne(String esssId);
-    void deleteMany(List<String> esssIdList);
-    void updateOne(EssSpace essSpace);
+    void deleteOne(String esssId) throws Exception;
+    void deleteMany(List<String> esssIdList) throws Exception;
+    void updateOne(EssSpace essSpace) throws Exception;
     Page<EssSpace> selectByPage(Integer pageIndex,Integer pageSize);
-    Set<EssSpace> selectSetFromRedis();
 }

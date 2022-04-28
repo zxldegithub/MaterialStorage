@@ -1,14 +1,18 @@
 package com.zxl.materialStorage.service.storageManage.serviceImpl;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zxl.materialStorage.mapper.storageManage.EsMapper;
 import com.zxl.materialStorage.model.enumPackage.StorageStatus;
 import com.zxl.materialStorage.model.enumPackage.StorageType;
 import com.zxl.materialStorage.model.pojo.ErStorage;
+import com.zxl.materialStorage.model.pojo.EsStoreroom;
 import com.zxl.materialStorage.service.storageManage.EsService;
+import com.zxl.materialStorage.service.storageManage.EssService;
 import com.zxl.materialStorage.util.SystemUtil;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -31,6 +35,8 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private EssService essService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -66,10 +72,20 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     @Transactional(rollbackFor = Exception.class)
     public void deleteOne(String esId) {
         try {
+            //删除物资库信息并更新Redis
+            ErStorage byId = getById(esId);
+            List<EsStoreroom> esStoreroomList = essService.list(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEsNo, byId.getEsNo()));
+            List<String> essIdList = new ArrayList<>();
+            for (EsStoreroom esStoreroom : esStoreroomList) {
+                essIdList.add(esStoreroom.getEssId());
+            }
+            essService.deleteMany(essIdList);
+
             removeById(esId);
             Set<ErStorage> erStorages = selectSetFromRedis();
             erStorages.removeIf(erStorage -> esId.equals(erStorage.getEsId()));
             updateCache(erStorages);
+            //删除下级仓库信息
         } catch (Exception e) {
             log.error("单个删除物资库时出错", e);
         }
@@ -79,6 +95,16 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     @Transactional(rollbackFor = Exception.class)
     public void deleteMany(List<String> esIdList) {
         try {
+            //先删除下级仓库的数据
+            List<ErStorage> erStorageList = listByIds(esIdList);
+            for (ErStorage erStorage : erStorageList) {
+                List<EsStoreroom> list = essService.list(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEsNo, erStorage.getEsNo()));
+                List<String> essIdList = new ArrayList<>();
+                for (EsStoreroom esStoreroom : list) {
+                    essIdList.add(esStoreroom.getEssId());
+                }
+                essService.deleteMany(essIdList);
+            }
             removeByIds(esIdList);
             Set<ErStorage> erStorages = selectSetFromRedis();
             Iterator<ErStorage> iterator = erStorages.iterator();
@@ -124,6 +150,12 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
                     esStatusCode = value.getCode();
                 }
             }
+            //先更新下级仓库的信息
+            List<EsStoreroom> list = essService.list(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEsNo, existErStorage.getEsNo()));
+            for (EsStoreroom esStoreroom : list) {
+                esStoreroom.setEsNo(erStorage.getEsNo());
+            }
+            essService.updateBatchById(list);
             //构建新对象
             existErStorage.setEsNo(erStorage.getEsNo()).setEsLocation(erStorage.getEsLocation()).setEsTypeCode(esTypeCode)
                     .setEsTypeName(erStorage.getEsTypeName()).setEsStoreroomNumber(erStorage.getEsStoreroomNumber())
