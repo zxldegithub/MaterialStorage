@@ -2,23 +2,21 @@ package com.zxl.materialStorage.service.storageManage.serviceImpl;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zxl.materialStorage.mapper.storageManage.EssMapper;
 import com.zxl.materialStorage.model.pojo.ErStorage;
 import com.zxl.materialStorage.model.pojo.EsStoreroom;
+import com.zxl.materialStorage.model.pojo.EssSpace;
 import com.zxl.materialStorage.service.storageManage.EsService;
 import com.zxl.materialStorage.service.storageManage.EssService;
+import com.zxl.materialStorage.service.storageManage.EsssService;
 import com.zxl.materialStorage.util.SystemUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @className: EsssServiceImpl
@@ -32,141 +30,94 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
     private EsService esService;
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private EsssService esssService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void insertNewOne(EsStoreroom esStoreroom) throws Exception {
-        //从Redis中检查是否已存在该条仓库记录
-        EsStoreroom existEsStoreroom = null;
-        Set<EsStoreroom> esStorerooms = selectSetFromRedis();
-        for (EsStoreroom storeroom : esStorerooms) {
-            if (esStoreroom.getEsNo().equals(storeroom.getEsNo())) {
-                existEsStoreroom = storeroom;
-                break;
-            }
+        //先检查是否已经存在该编号的仓库
+        EsStoreroom storeroom = getOne(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEssNo, esStoreroom.getEssNo()));
+        if (ObjectUtil.isNotNull(storeroom)){
+            throw new Exception("已存在此标号的仓库");
         }
-        if (ObjectUtil.isNull(existEsStoreroom)) {
-            //补充仓库信息并存入数据库
-            esStoreroom.setEssTimeValue(SystemUtil.getTime()).setEssTs(SystemUtil.getTime());
-            save(esStoreroom);
-            //同时从Redis中获取上级物资信息库
-            Set<ErStorage> erStorages = esService.selectSetFromRedis();
-            ErStorage existErStorage = null;
-            for (ErStorage erStorage : erStorages) {
-                if (esStoreroom.getEsNo().equals(erStorage.getEsNo())){
-                    existErStorage = erStorage;
-                    break;
-                }
-            }
-            //获取到后进行更新
-            if (ObjectUtil.isNotNull(existErStorage)) {
-                existErStorage.setEsStoreroomNumber(existErStorage.getEsStoreroomNumber() + 1).setEsTs(SystemUtil.getTime());
-                esService.updateOne(existErStorage);
-                //更新完成后加入缓存
-                redisTemplate.opsForSet().add("esStorerooms", esStoreroom);
-            } else {
-                throw new Exception("不存在上级物资库");
-            }
-        } else {
-            throw new Exception("已存在该仓库");
-        }
+        //先改变上级物资库的计数
+        ErStorage storage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
+        storage.setEsStoreroomNumber(storage.getEsStoreroomNumber()+1);
+        esService.updateOne(storage);
+        //再补全仓库信息：时间值
+        esStoreroom.setEssTimeValue(SystemUtil.getTime()).setEssTs(SystemUtil.getTime());
+        save(esStoreroom);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteOne(String essId) {
-        try {
-            //先更新上级物资库中的数据
-            EsStoreroom esStoreroom = getById(essId);
-            ErStorage erStorage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
-            erStorage.setEsStoreroomNumber(erStorage.getEsStoreroomNumber() - 1);
-            esService.updateOne(erStorage);
-            //再删除下级库区的数据
-
-            //再删除仓库数据同时更新缓存
-            Set<EsStoreroom> esStoreroomSet = selectSetFromRedis();
-            esStoreroomSet.removeIf(storeroom -> essId.equals(storeroom.getEssId()));
-            removeById(essId);
-            updateCache(esStoreroomSet);
-        } catch (Exception e) {
-            log.error("删除单个仓库时出错", e);
+    public void deleteOne(String essId) throws Exception {
+        //先更新上级物资库的计数
+        EsStoreroom byId = getById(essId);
+        ErStorage storage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, byId.getEsNo()));
+        storage.setEsStoreroomNumber(storage.getEsStoreroomNumber()-1);
+        esService.updateOne(storage);
+        //再删除下级关联的库区
+        List<EssSpace> essSpaceList = esssService.list(new QueryWrapper<EssSpace>().lambda().eq(EssSpace::getEssNo, byId.getEssNo()));
+        List<String> esssIdList = new ArrayList<>();
+        for (EssSpace space : essSpaceList) {
+            esssIdList.add(space.getEsssId());
         }
+        esssService.deleteMany(esssIdList);
+        //最后删除仓库数据
+        removeById(essId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteMany(List<String> essIdList) {
-        try {
-            //从Redis中获取仓库信息
-            HashMap<String, Integer> esNoMap = new HashMap<>();
-            Set<EsStoreroom> esStorerooms = selectSetFromRedis();
-            Iterator<EsStoreroom> iterator = esStorerooms.iterator();
-            while (iterator.hasNext()) {
-                EsStoreroom storeroom = iterator.next();
-                for (String essId : essIdList) {
-                    if (essId.equals(storeroom.getEssId())){
-                        Integer counts = esNoMap.get(storeroom.getEsNo());
-                        esNoMap.put(storeroom.getEsNo(), counts == null ? 1 : ++counts);
-                    }
-                    iterator.remove();
-                }
-            }
-            //先修改上级物资库的数据
-            Set<String> esNOSet = esNoMap.keySet();
-            for (String esNo : esNOSet) {
-                ErStorage erStorage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esNo));
-                erStorage.setEsStoreroomNumber(erStorage.getEsStoreroomNumber()-esNoMap.get(esNo));
-                esService.updateOne(erStorage);
-            }
-            //再删除仓库数据，并更新Redis数据
-            removeByIds(essIdList);
-            updateCache(esStorerooms);
-        } catch (Exception e) {
-            log.error("删除多个仓库时出错", e);
+    public void deleteMany(List<String> essIdList) throws Exception {
+        //先更新上级仓库的计数
+        List<EsStoreroom> esStoreroomList = listByIds(essIdList);
+        Map<String, Integer> esNoMap = new HashMap<>();
+        for (EsStoreroom storeroom : esStoreroomList) {
+            Integer count = esNoMap.get(storeroom.getEsNo());
+            esNoMap.put(storeroom.getEsNo(),count == null ? 1 : ++count);
         }
-
+        for (String esNo : esNoMap.keySet()) {
+            ErStorage storage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esNo));
+            storage.setEsStoreroomNumber(storage.getEsStoreroomNumber()-esNoMap.get(esNo));
+            esService.updateOne(storage);
+        }
+        //再删除下级关联的库区
+        for (EsStoreroom storeroom : esStoreroomList) {
+            List<EssSpace> essSpaceList = esssService.list(new QueryWrapper<EssSpace>().lambda().eq(EssSpace::getEssNo, storeroom.getEssNo()));
+            List<String> esssIdList = new ArrayList<>();
+            for (EssSpace space : essSpaceList) {
+                esssIdList.add(space.getEsssId());
+            }
+            esssService.deleteMany(esssIdList);
+        }
+        //最后删除仓库数据
+        removeByIds(essIdList);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateOne(EsStoreroom esStoreroom) throws Exception {
-        //从Redis中获取现存的仓库信息，并删除
-        EsStoreroom existEsStoreroom = null;
-        Set<EsStoreroom> esStorerooms = selectSetFromRedis();
-        Iterator<EsStoreroom> iterator = esStorerooms.iterator();
-        while (iterator.hasNext()) {
-            EsStoreroom storeroom = iterator.next();
-            if (esStoreroom.getEssId().equals(storeroom.getEssId())){
-                existEsStoreroom = storeroom;
-                iterator.remove();
-                break;
+        //判断上级物资库编号有没有发生变化
+        EsStoreroom byId = getById(esStoreroom.getEssId());
+        if (!byId.getEsNo().equals(esStoreroom.getEsNo())){
+            //先更新物资库的计数
+            ErStorage front = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, byId.getEsNo()));
+            front.setEsStoreroomNumber(front.getEsStoreroomNumber()-1);
+            esService.updateOne(front);
+            ErStorage back = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
+            back.setEsStoreroomNumber(back.getEsStoreroomNumber()+1);
+            esService.updateOne(back);
+            //再更新下级库区的相关编号
+            List<EssSpace> spaceList = esssService.list(new QueryWrapper<EssSpace>().lambda().eq(EssSpace::getEssNo, byId.getEssNo()));
+            for (EssSpace space : spaceList) {
+                space.setEssNo(esStoreroom.getEssNo());
+                esssService.updateOne(space);
             }
         }
-        //若仓库对应上级物资库没有发生更改，则不修改物资库数据
-        if (!existEsStoreroom.getEsNo().equals(esStoreroom.getEsNo())) {
-            //更新仓库之前所在物资库的数据
-            ErStorage erStorageFront = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, existEsStoreroom.getEsNo()));
-            erStorageFront.setEsStoreroomNumber(erStorageFront.getEsStoreroomNumber() - 1);
-            //更新仓库之后所在物资库的数据
-            ErStorage erStorageBack = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
-            erStorageBack.setEsStoreroomNumber(erStorageBack.getEsStoreroomNumber() + 1);
-            List<ErStorage> erStorageList = new ArrayList<>();
-            erStorageList.add(erStorageFront);
-            erStorageList.add(erStorageBack);
-            for (ErStorage erStorage : erStorageList) {
-                esService.updateOne(erStorage);
-            }
-        }
-        //构建新对象
-        existEsStoreroom.setEssNo(esStoreroom.getEssNo()).setEsNo(esStoreroom.getEsNo()).setEssLocation(esStoreroom.getEssLocation())
-                .setEssUse(esStoreroom.getEssUse()).setEssArea(esStoreroom.getEssArea())
-                .setEssFloorNumber(esStoreroom.getEssFloorNumber()).setEssSpaceNumber(esStoreroom.getEssSpaceNumber())
-                .setEssTs(SystemUtil.getTime());
-        //更新数据库和缓存中的仓库信息
-        updateById(existEsStoreroom);
-        esStorerooms.add(existEsStoreroom);
-        updateCache(esStorerooms);
+        esStoreroom.setEssTs(SystemUtil.getTime());
+        updateById(esStoreroom);
     }
 
     @Override
@@ -174,31 +125,4 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
         return page(new Page<>(pageIndex, pageSize));
     }
 
-    @Override
-    public Set<EsStoreroom> selectSetFromRedis() {
-        //从redis中获取仓库数据，若存在直接返回，若不存在则先存入redis再返回
-        SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
-        Set<Object> esStorerooms = setOperations.members("esStorerooms");
-        Set<EsStoreroom> esStoreroomSet = new HashSet<>();
-        if (ObjectUtil.isNotEmpty(esStorerooms)) {
-            for (Object o : esStorerooms) {
-                esStoreroomSet.add((EsStoreroom) o);
-            }
-        } else {
-            for (EsStoreroom esStoreroom : list()) {
-                setOperations.add("esStorerooms", esStoreroom);
-                esStoreroomSet.add(esStoreroom);
-            }
-            redisTemplate.expire("esStorerooms",30,TimeUnit.MINUTES);
-        }
-        return esStoreroomSet;
-    }
-
-    public void updateCache(Set<EsStoreroom> esStorerooms) {
-        redisTemplate.delete("esStorerooms");
-        for (EsStoreroom esStoreroom : esStorerooms) {
-            redisTemplate.opsForSet().add("esStorerooms", esStoreroom);
-        }
-        redisTemplate.expire("esStorerooms",30, TimeUnit.MINUTES);
-    }
 }

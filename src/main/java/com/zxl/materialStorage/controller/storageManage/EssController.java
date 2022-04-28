@@ -88,9 +88,4 @@ public class EssController {
                                                   @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
         return ApiResult.success(essService.selectByPage(pageIndex,pageIndex));
     }
-
-    @GetMapping("/selectSetFromRedis")
-    public ApiResult<Set<EsStoreroom>> selectSetFromRedis(){
-        return ApiResult.success(essService.selectSetFromRedis());
-    }
 }

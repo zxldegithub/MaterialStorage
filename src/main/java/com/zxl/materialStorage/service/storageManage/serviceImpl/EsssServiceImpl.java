@@ -39,8 +39,11 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
         if(ObjectUtil.isNotNull(space)){
             throw new Exception("已存在该编号的库区");
         }
-        //补全仓库信息：物资库编号，时间值
+        //先改变上级仓库的计数
         EsStoreroom storeroom = essService.getOne(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEssNo, essSpace.getEssNo()));
+        storeroom.setEssSpaceNumber(storeroom.getEssSpaceNumber()+1);
+        essService.updateOne(storeroom);
+        //补全库区信息：物资库编号，时间值
         essSpace.setEsNo(storeroom.getEsNo()).setEsssTimeValue(SystemUtil.getTime()).setEsssTs(SystemUtil.getTime());
         save(essSpace);
     }
@@ -106,12 +109,14 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
             EsStoreroom back = essService.getOne(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEssNo, essSpace.getEssNo()));
             back.setEssSpaceNumber(back.getEssSpaceNumber()+1);
             essService.updateOne(back);
-            //更新库区的编号
+            //更新下级货架的相关编号
+            List<EsssShelves> esssShelvesList = essssService.list(new QueryWrapper<EsssShelves>().lambda().eq(EsssShelves::getEsssNo, byId.getEsssNo()));
+            for (EsssShelves esssShelves : esssShelvesList) {
+                esssShelves.setEsssNo(essSpace.getEsssNo());
+                essssService.updateOne(esssShelves);
+            }
+            //更新库区中的物资库的编号
             essSpace.setEsNo(back.getEsNo());
-            //更新下级库区的相关编号
-            EsssShelves shelves = essssService.getOne(new QueryWrapper<EsssShelves>().lambda().eq(EsssShelves::getEsssNo, byId.getEsssNo()));
-            shelves.setEsssNo(essSpace.getEsssNo());
-            essssService.updateOne(shelves);
         }
         essSpace.setEsssTs(SystemUtil.getTime());
         updateById(essSpace);
