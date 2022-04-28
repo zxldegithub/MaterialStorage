@@ -89,8 +89,4 @@ public class EsController {
         return ApiResult.success(erStoragePage);
     }
 
-    @GetMapping("/selectListFromRedis")
-    public ApiResult<Set<ErStorage>> selectListFromRedis(){
-        return ApiResult.success(esService.selectSetFromRedis());
-    }
 }
