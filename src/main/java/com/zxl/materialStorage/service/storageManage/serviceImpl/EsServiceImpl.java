@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zxl.materialStorage.mapper.storageManage.EsMapper;
 import com.zxl.materialStorage.model.enumPackage.StorageStatus;
+import com.zxl.materialStorage.model.enumPackage.StorageType;
 import com.zxl.materialStorage.model.pojo.ErStorage;
 import com.zxl.materialStorage.model.pojo.EsStoreroom;
 import com.zxl.materialStorage.service.storageManage.EsService;
@@ -40,7 +41,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
         }
         //补全信息
         Integer typeCode = null;
-        for (StorageStatus value : StorageStatus.values()) {
+        for (StorageType value : StorageType.values()) {
             if (value.getName().equals(erStorage.getEsTypeName())){
                 typeCode = value.getCode();
                 break;
@@ -95,7 +96,24 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
                 essService.updateOne(storeroom);
             }
         }
-        erStorage.setEsTs(SystemUtil.getTime());
+        //补全信息
+        Integer typeCode = null;
+        for (StorageType value : StorageType.values()) {
+            if (value.getName().equals(erStorage.getEsTypeName())){
+                typeCode = value.getCode();
+                break;
+            }
+        }
+
+        Integer statusCode = null;
+        for (StorageStatus value : StorageStatus.values()) {
+            if (value.getName().equals(erStorage.getEsStatusName())){
+                statusCode = value.getCode();
+                break;
+            }
+        }
+
+        erStorage.setEsTypeCode(typeCode).setEsStatusCode(statusCode).setEsTs(SystemUtil.getTime());
         updateById(erStorage);
     }
 
