@@ -6,11 +6,13 @@ import com.zxl.materialStorage.common.api.ApiResult;
 import com.zxl.materialStorage.model.pojo.MaterialAttribute;
 import com.zxl.materialStorage.model.pojo.MaterialEnter;
 import com.zxl.materialStorage.service.materialEnter.MaterialEnterService;
+import jdk.internal.vm.annotation.ForceInline;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @className: MaterialEnterController
@@ -45,10 +47,14 @@ public class MaterialEnterController {
             if (StringUtils.isEmpty(emeId)) {
                 return ApiResult.blank();
             }
+            MaterialEnter byId = materialEnterService.getById(emeId);
+            if (byId.isEmeIsAccept()){
+                return ApiResult.error();
+            }
             materialEnterService.deleteOne(emeId);
         } catch (Exception e) {
-            log.error("删除物资属性出错", e);
-            return ApiResult.error(500, "删除物资属性出错", e);
+            log.error("删除物资入库出错", e);
+            return ApiResult.error(500, "删除物资入库出错", e);
         }
         return ApiResult.success();
     }
@@ -59,10 +65,16 @@ public class MaterialEnterController {
             if (ObjectUtil.isEmpty(emeIdList)) {
                 return ApiResult.blank();
             }
+            List<MaterialEnter> materialEnters = materialEnterService.listByIds(emeIdList);
+            for (MaterialEnter materialEnter : materialEnters) {
+                if (materialEnter.isEmeIsAccept()){
+                    return ApiResult.error();
+                }
+            }
             materialEnterService.deleteMany(emeIdList);
         } catch (Exception e) {
-            log.error("批量删除物资属性出错", e);
-            return ApiResult.error(500, "批量删除物资属性出错", e);
+            log.error("批量删除物资入库出错", e);
+            return ApiResult.error(500, "批量删除物资入库出错", e);
         }
         return ApiResult.success();
     }
@@ -73,10 +85,14 @@ public class MaterialEnterController {
             if (ObjectUtil.isNull(materialEnter)) {
                 return ApiResult.blank();
             }
+            MaterialEnter byId = materialEnterService.getById(materialEnter.getEmeId());
+            if (byId.isEmeIsAccept()){
+                return ApiResult.error();
+            }
             materialEnterService.updateOne(materialEnter);
         } catch (Exception e) {
-            log.error("更新物资属性出错");
-            return ApiResult.error(500, "更新物资属性出错", e);
+            log.error("更新物资入库出错");
+            return ApiResult.error(500, "更新物资入库出错", e);
         }
         return ApiResult.success();
     }
@@ -97,11 +113,16 @@ public class MaterialEnterController {
             if (ObjectUtil.isNull(materialEnter)){
                 return ApiResult.blank();
             }
-            materialEnterService.materialAccept();
+            materialEnterService.materialAccept(materialEnter);
         } catch (Exception e) {
             log.error("物资验收失败");
             return ApiResult.error(500,"物资验收失败",e);
         }
         return ApiResult.success();
+    }
+
+    @GetMapping("/getAllNeedInfo")
+    public ApiResult<Map<String, List<String>>> getAllNeedInfo(){
+        return ApiResult.success(materialEnterService.getAllNeedInfo());
     }
 }

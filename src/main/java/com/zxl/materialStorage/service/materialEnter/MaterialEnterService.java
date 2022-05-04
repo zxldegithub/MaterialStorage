@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.zxl.materialStorage.model.pojo.MaterialEnter;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @className: MaterialEnterService
@@ -25,5 +26,7 @@ public interface MaterialEnterService extends IService<MaterialEnter> {
 
     List<MaterialEnter> selectAlready();
 
-    void materialAccept();
+    void materialAccept(MaterialEnter materialEnter);
+
+    Map<String,List<String>> getAllNeedInfo();
 }

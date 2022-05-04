@@ -13,7 +13,7 @@ import lombok.Data;
 @AllArgsConstructor
 public enum ApiCode implements ICode{
     SUCCESS(2,"操作成功"),
-    ERROR(5,"操作失败"),
+    ERROR(1,"不允许作此操作"),
     BLANK(0,"参数为空");
 
     private final Integer code;
