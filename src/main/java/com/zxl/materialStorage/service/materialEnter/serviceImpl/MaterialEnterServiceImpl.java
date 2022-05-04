@@ -89,6 +89,28 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEmpNos(MaterialPacking byId, MaterialPacking materialPacking) {
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmpNo, byId.getEmpNo()));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEmpNo(materialPacking.getEmpNo()).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEmaNos(MaterialAttribute byId, MaterialAttribute materialAttribute) {
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmaNo, byId.getEmaNo()));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEmaNo(materialAttribute.getEmaNo()).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
     public List<MaterialEnter> selectAll() {
         return list();
     }

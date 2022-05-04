@@ -1,15 +1,22 @@
 package com.zxl.materialStorage.controller.materialEnter;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.zxl.materialStorage.common.api.ApiResult;
 import com.zxl.materialStorage.model.pojo.MaterialAttribute;
+import com.zxl.materialStorage.model.pojo.MaterialEnter;
+import com.zxl.materialStorage.model.pojo.MaterialPacking;
 import com.zxl.materialStorage.service.materialEnter.MaterialAttributeService;
+import com.zxl.materialStorage.service.materialEnter.MaterialEnterService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @className: MaterialAttributeController
@@ -23,6 +30,8 @@ import java.util.List;
 public class MaterialAttributeController {
     @Autowired
     private MaterialAttributeService materialAttributeService;
+    @Autowired
+    private MaterialEnterService materialEnterService;
 
     @PostMapping("/insertNewOne")
     public ApiResult<Object> insertNewOne(@RequestBody MaterialAttribute materialAttribute) {
@@ -45,6 +54,12 @@ public class MaterialAttributeController {
             if (StringUtils.isEmpty(emaId)) {
                 return ApiResult.blank();
             }
+            //存在引用，拒绝删除，直接返回
+            MaterialAttribute byId = materialAttributeService.getById(emaId);
+            MaterialEnter existMaterialEnter = materialEnterService.getOne(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmaNo, byId.getEmaNo()));
+            if (ObjectUtil.isNotNull(existMaterialEnter)){
+                return ApiResult.error();
+            }
             materialAttributeService.deleteOne(emaId);
         } catch (Exception e) {
             log.error("删除物资属性出错", e);
@@ -59,6 +74,18 @@ public class MaterialAttributeController {
         try {
             if (ObjectUtil.isEmpty(emaIdList)) {
                 return ApiResult.blank();
+            }
+            //存在引用，拒绝删除，直接返回
+            List<MaterialAttribute> materialAttributeList = materialAttributeService.listByIds(emaIdList);
+            List<String> emaNoList = new ArrayList<>();
+            for (MaterialAttribute materialAttribute : materialAttributeList) {
+                emaNoList.add(materialAttribute.getEmaNo());
+            }
+            Map<String, Object> columnMap = new HashMap<>();
+            columnMap.put("ema_no",emaNoList);
+            List<MaterialEnter> materialEnters = materialEnterService.listByMap(columnMap);
+            if (ObjectUtil.isNotEmpty(materialEnters)){
+                return ApiResult.error();
             }
             materialAttributeService.deleteMany(emaIdList);
         } catch (Exception e) {
@@ -75,6 +102,12 @@ public class MaterialAttributeController {
             if (ObjectUtil.isNull(materialAttribute)) {
                 return ApiResult.blank();
             }
+            //异步更新引用
+            MaterialAttribute byId = materialAttributeService.getById(materialAttribute.getEmaId());
+            if (!byId.getEmaNo().equals(materialAttribute.getEmaNo())){
+                materialEnterService.updateEmaNos(byId,materialAttribute);
+            }
+            //再更新自己
             materialAttributeService.updateOne(materialAttribute);
         } catch (Exception e) {
             log.error("更新物资属性出错");
