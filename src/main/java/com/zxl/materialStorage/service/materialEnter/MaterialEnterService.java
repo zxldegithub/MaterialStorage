@@ -2,6 +2,7 @@ package com.zxl.materialStorage.service.materialEnter;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zxl.materialStorage.model.pojo.MaterialEnter;
+import com.zxl.materialStorage.model.pojo.MaterialType;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,8 @@ public interface MaterialEnterService extends IService<MaterialEnter> {
     void deleteMany(List<String> emeIdList);
 
     void updateOne(MaterialEnter materialEnter);
+
+    void updateEmtNos(MaterialType byId, MaterialType materialType);
 
     List<MaterialEnter> selectAll();
 

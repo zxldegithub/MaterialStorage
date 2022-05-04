@@ -70,12 +70,22 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @Async("threadPool")
     public void updateOne(MaterialEnter materialEnter) {
         EsssShelves esssShelves = essssService.getOne(new QueryWrapper<EsssShelves>().lambda().eq(EsssShelves::getEssssNo, materialEnter.getEssssNo()));
         materialEnter.setEsNo(esssShelves.getEsNo()).setEssNo(esssShelves.getEssNo()).setEsssNo(esssShelves.getEsssNo())
                 .setEmeTs(SystemUtil.getTime());
         updateById(materialEnter);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEmtNos(MaterialType byId, MaterialType materialType){
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmtNo, byId.getEmtNo()));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEmtNo(materialType.getEmtNo()).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
     }
 
     @Override
