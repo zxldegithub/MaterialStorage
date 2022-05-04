@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zxl.materialStorage.common.api.ApiResult;
+import com.zxl.materialStorage.model.pojo.ErStorage;
 import com.zxl.materialStorage.model.pojo.EsStoreroom;
 import com.zxl.materialStorage.service.storageManage.EsService;
 import com.zxl.materialStorage.service.storageManage.EssService;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -26,6 +28,8 @@ import java.util.Set;
 public class EssController {
     @Autowired
     private EssService essService;
+    @Autowired
+    private EsService esService;
 
     @PostMapping("/insertNewOne")
     public ApiResult<Object> insertNewOne(@RequestBody EsStoreroom esStoreroom){
@@ -87,5 +91,15 @@ public class EssController {
     public ApiResult<Page<EsStoreroom>> selectByPage(@RequestParam(value = "pageIndex",defaultValue = "1") Integer pageIndex,
                                                   @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
         return ApiResult.success(essService.selectByPage(pageIndex,pageIndex));
+    }
+
+    @GetMapping("/selectAll")
+    public ApiResult<List<EsStoreroom>> selectAll(){
+        return ApiResult.success(essService.selectAll());
+    }
+
+    @GetMapping("/selectEssNoList")
+    public ApiResult<List<String>> selectEssNoList(){
+        return ApiResult.success(essService.selectEssNoList());
     }
 }

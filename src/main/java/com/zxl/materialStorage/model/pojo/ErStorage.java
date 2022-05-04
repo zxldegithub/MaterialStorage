@@ -32,12 +32,12 @@ public class ErStorage {
     private String esId;
     private String esNo;
     private String esLocation;
-    private int esTypeCode;
+    private Integer esTypeCode;
     private String esTypeName;
-    private int esStoreroomNumber;
-    private int esOutSpaceNumber;
+    private Integer esStoreroomNumber;
+    private Integer esOutSpaceNumber;
     private String esIntroduce;
-    private int esStatusCode;
+    private Integer esStatusCode;
     private String esStatusName;
     private String esTimeValue;
     @TableField("ts")

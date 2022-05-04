@@ -23,4 +23,6 @@ public interface EssssService extends IService<EsssShelves> {
     void updateOne(EsssShelves esssShelves);
 
     Page<EsssShelves> selectByPage(Integer pageIndex, Integer pageSize);
+
+    List<EsssShelves> selectAll();
 }

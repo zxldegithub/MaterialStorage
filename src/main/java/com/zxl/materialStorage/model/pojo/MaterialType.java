@@ -9,31 +9,27 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.springframework.data.annotation.Id;
 
 /**
- * @className: ErStorageStoreroom
+ * @className: MaterialType
  * @description: TODO
  * @author: ZhangXiaolei
- * @date: 2022/4/22
+ * @date: 2022/5/3
  **/
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("er_storage_storeroom")
-public class EsStoreroom {
+@TableName("er_material_type")
+public class MaterialType {
     @TableId(type = IdType.ASSIGN_ID)
-    private String essId;
-    private String essNo;
-    private String esNo;
-    private String essLocation;
-    private String essUse;
-    private double essArea;
-    private Integer essFloorNumber;
-    private Integer essSpaceNumber;
-    private String essTimeValue;
+    private String emtId;
+    private String emtNo;
+    private String emtNameFirst;
+    private String emtNameSecond;
+    private String emtTimeValue;
     @TableField("ts")
-    private String essTs;
+    private String emtTs;
 }

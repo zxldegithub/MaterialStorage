@@ -20,4 +20,6 @@ public interface EsssService extends IService<EssSpace> {
     void deleteMany(List<String> esssIdList) throws Exception;
     void updateOne(EssSpace essSpace) throws Exception;
     Page<EssSpace> selectByPage(Integer pageIndex,Integer pageSize);
+    List<EssSpace> selectAll();
+    List<String> selectEsssNoList();
 }

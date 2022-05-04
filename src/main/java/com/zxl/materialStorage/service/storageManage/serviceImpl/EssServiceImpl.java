@@ -13,6 +13,7 @@ import com.zxl.materialStorage.service.storageManage.EssService;
 import com.zxl.materialStorage.service.storageManage.EsssService;
 import com.zxl.materialStorage.util.SystemUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
     private EsService esService;
 
     @Autowired
+    @Lazy
     private EsssService esssService;
 
     @Override
@@ -42,7 +44,7 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
         }
         //先改变上级物资库的计数
         ErStorage storage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
-        storage.setEsStoreroomNumber(storage.getEsStoreroomNumber()+1);
+        storage.setEsStoreroomNumber(storage.getEsStoreroomNumber()==null? 1: storage.getEsStoreroomNumber()+1);
         esService.updateOne(storage);
         //再补全仓库信息：时间值
         esStoreroom.setEssTimeValue(SystemUtil.getTime()).setEssTs(SystemUtil.getTime());
@@ -72,6 +74,9 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
     @Transactional(rollbackFor = Exception.class)
     public void deleteMany(List<String> essIdList) throws Exception {
         //先更新上级仓库的计数
+        if (ObjectUtil.isEmpty(essIdList)){
+            return;
+        }
         List<EsStoreroom> esStoreroomList = listByIds(essIdList);
         Map<String, Integer> esNoMap = new HashMap<>();
         for (EsStoreroom storeroom : esStoreroomList) {
@@ -99,17 +104,37 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateOne(EsStoreroom esStoreroom) throws Exception {
-        //判断上级物资库编号有没有发生变化
+        //检查仓库编号有没有发生变化
         EsStoreroom byId = getById(esStoreroom.getEssId());
+        if (!byId.getEssNo().equals(esStoreroom.getEssNo())){
+            //更新下级库区的相关编号
+            List<EssSpace> spaceList = esssService.list(new QueryWrapper<EssSpace>().lambda().eq(EssSpace::getEssNo, byId.getEssNo()));
+            for (EssSpace space : spaceList) {
+                space.setEssNo(esStoreroom.getEssNo());
+                esssService.updateOne(space);
+            }
+        }
         if (!byId.getEsNo().equals(esStoreroom.getEsNo())){
             //先更新物资库的计数
             ErStorage front = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, byId.getEsNo()));
             front.setEsStoreroomNumber(front.getEsStoreroomNumber()-1);
             esService.updateOne(front);
-            ErStorage back = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
-            back.setEsStoreroomNumber(back.getEsStoreroomNumber()+1);
-            esService.updateOne(back);
-            //再更新下级库区的相关编号
+            boolean flag = true;
+            //1.物资库更换了编号，这种情况就不改变计数了
+            List<String> esNoList = esService.selectEsNoList();
+            for (String esNo : esNoList) {
+                if (esNo.equals(esStoreroom.getEsNo())){
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag){
+                //2.仓库进行了更换物资库，这种情况需要改变计数
+                ErStorage back = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, esStoreroom.getEsNo()));
+                back.setEsStoreroomNumber(back.getEsStoreroomNumber() == null ? 1:back.getEsStoreroomNumber()+1);
+                esService.updateOne(back);
+            }
+            //再更新下级库区的物资库编号
             List<EssSpace> spaceList = esssService.list(new QueryWrapper<EssSpace>().lambda().eq(EssSpace::getEssNo, byId.getEssNo()));
             for (EssSpace space : spaceList) {
                 space.setEssNo(esStoreroom.getEssNo());
@@ -125,4 +150,18 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
         return page(new Page<>(pageIndex, pageSize));
     }
 
+    @Override
+    public List<EsStoreroom> selectAll() {
+        return list();
+    }
+
+    @Override
+    public List<String> selectEssNoList() {
+        List<EsStoreroom> esStoreroomList = selectAll();
+        List<String> essNoList = new ArrayList();
+        for (EsStoreroom esStoreroom : esStoreroomList) {
+            essNoList.add(esStoreroom.getEssNo());
+        }
+        return essNoList;
+    }
 }

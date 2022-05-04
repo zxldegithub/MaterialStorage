@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -89,4 +90,13 @@ public class EsController {
         return ApiResult.success(erStoragePage);
     }
 
+    @GetMapping("/selectAll")
+    public ApiResult<List<ErStorage>> selectAll(){
+        return ApiResult.success(esService.selectAll());
+    }
+
+    @GetMapping("/selectEsNoList")
+    public ApiResult<List<String>> selectEsNoList(){
+        return ApiResult.success(esService.selectEsNoList());
+    }
 }

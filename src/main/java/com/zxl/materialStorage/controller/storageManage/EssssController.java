@@ -86,4 +86,9 @@ public class EssssController {
                                         @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
         return ApiResult.success(essssService.selectByPage(pageIndex,pageSize));
     }
+
+    @GetMapping("/selectAll")
+    public ApiResult<List<EsssShelves>> selectAll(){
+        return ApiResult.success(essssService.selectAll());
+    }
 }

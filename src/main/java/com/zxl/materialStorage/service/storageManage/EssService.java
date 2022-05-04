@@ -21,4 +21,6 @@ public interface EssService extends IService<EsStoreroom> {
     void deleteMany(List<String> essIdList) throws Exception;
     void updateOne(EsStoreroom esStoreroom) throws Exception;
     Page<EsStoreroom> selectByPage(Integer pageIndex,Integer pageSize);
+    List<EsStoreroom> selectAll();
+    List<String> selectEssNoList();
 }

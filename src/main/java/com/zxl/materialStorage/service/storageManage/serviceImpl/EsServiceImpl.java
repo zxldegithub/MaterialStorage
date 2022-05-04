@@ -14,6 +14,7 @@ import com.zxl.materialStorage.service.storageManage.EssService;
 import com.zxl.materialStorage.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ import java.util.*;
 @Slf4j
 public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements EsService {
     @Autowired
+    @Lazy
     private EssService essService;
 
     @Override
@@ -88,7 +90,7 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     public void updateOne(ErStorage erStorage) throws Exception {
         //判断物资库的编号是否发生变化
         ErStorage byId = getById(erStorage.getEsId());
-        if (!erStorage.getEsId().equals(byId.getEsId())){
+        if (!erStorage.getEsNo().equals(byId.getEsNo())){
             //更新下级关联的相关编号
             List<EsStoreroom> storeroomList = essService.list(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEsNo, byId.getEsNo()));
             for (EsStoreroom storeroom : storeroomList) {
@@ -98,20 +100,25 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
         }
         //补全信息
         Integer typeCode = null;
-        for (StorageType value : StorageType.values()) {
-            if (value.getName().equals(erStorage.getEsTypeName())){
-                typeCode = value.getCode();
-                break;
+        if (erStorage.getEsTypeName()!=null){
+
+            for (StorageType value : StorageType.values()) {
+                if (value.getName().equals(erStorage.getEsTypeName())){
+                    typeCode = value.getCode();
+                    break;
+                }
+            }
+        }
+        Integer statusCode = null;
+        if(erStorage.getEsStatusName()!=null){
+            for (StorageStatus value : StorageStatus.values()) {
+                if (value.getName().equals(erStorage.getEsStatusName())){
+                    statusCode = value.getCode();
+                    break;
+                }
             }
         }
 
-        Integer statusCode = null;
-        for (StorageStatus value : StorageStatus.values()) {
-            if (value.getName().equals(erStorage.getEsStatusName())){
-                statusCode = value.getCode();
-                break;
-            }
-        }
 
         erStorage.setEsTypeCode(typeCode).setEsStatusCode(statusCode).setEsTs(SystemUtil.getTime());
         updateById(erStorage);
@@ -120,5 +127,20 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     @Override
     public Page<ErStorage> selectByPage(Integer pageIndex, Integer pageSize) {
         return page(new Page<>(pageIndex,pageSize));
+    }
+
+    @Override
+    public List<ErStorage> selectAll() {
+        return list();
+    }
+
+    @Override
+    public List<String> selectEsNoList() {
+        List<ErStorage> erStorageList = selectAll();
+        List<String> esNoList = new ArrayList<>();
+        for (ErStorage erStorage : erStorageList) {
+            esNoList.add(erStorage.getEsNo());
+        }
+        return esNoList;
     }
 }

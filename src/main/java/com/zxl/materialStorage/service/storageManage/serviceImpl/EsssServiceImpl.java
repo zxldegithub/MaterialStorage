@@ -13,6 +13,7 @@ import com.zxl.materialStorage.service.storageManage.EsssService;
 import com.zxl.materialStorage.service.storageManage.EssssService;
 import com.zxl.materialStorage.util.SystemUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
     @Autowired
     private EssService essService;
     @Autowired
+    @Lazy
     private EssssService essssService;
 
     @Override
@@ -41,7 +43,7 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
         }
         //先改变上级仓库的计数
         EsStoreroom storeroom = essService.getOne(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEssNo, essSpace.getEssNo()));
-        storeroom.setEssSpaceNumber(storeroom.getEssSpaceNumber()+1);
+        storeroom.setEssSpaceNumber(storeroom.getEssSpaceNumber()==null?1:storeroom.getEssSpaceNumber()+1);
         essService.updateOne(storeroom);
         //补全库区信息：物资库编号，时间值
         essSpace.setEsNo(storeroom.getEsNo()).setEsssTimeValue(SystemUtil.getTime()).setEsssTs(SystemUtil.getTime());
@@ -71,6 +73,9 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
     @Transactional(rollbackFor = Exception.class)
     public void deleteMany(List<String> esssIdList) throws Exception {
         //先更新上级仓库的计数
+        if (ObjectUtil.isEmpty(esssIdList)){
+            return;
+        }
         List<EssSpace> essSpaceList = listByIds(esssIdList);
         Map<String, Integer> essNoMap = new HashMap<>();
         for (EssSpace space : essSpaceList) {
@@ -107,7 +112,7 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
             front.setEssSpaceNumber(front.getEssSpaceNumber()-1);
             essService.updateOne(front);
             EsStoreroom back = essService.getOne(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEssNo, essSpace.getEssNo()));
-            back.setEssSpaceNumber(back.getEssSpaceNumber()+1);
+            back.setEssSpaceNumber(back.getEssSpaceNumber()==null?1:back.getEssSpaceNumber()+1);
             essService.updateOne(back);
             //更新下级货架的相关编号
             List<EsssShelves> esssShelvesList = essssService.list(new QueryWrapper<EsssShelves>().lambda().eq(EsssShelves::getEsssNo, byId.getEsssNo()));
@@ -125,6 +130,21 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
     @Override
     public Page<EssSpace> selectByPage(Integer pageIndex, Integer pageSize) {
         return page(new Page<>(pageIndex,pageSize));
+    }
+
+    @Override
+    public List<EssSpace> selectAll() {
+        return list();
+    }
+
+    @Override
+    public List<String> selectEsssNoList() {
+        List<EssSpace> essSpaceList = selectAll();
+        List<String> esssNoList = new ArrayList<>();
+        for (EssSpace space : essSpaceList) {
+            esssNoList.add(space.getEsssNo());
+        }
+        return esssNoList;
     }
 
 }

@@ -20,4 +20,6 @@ public interface EsService extends IService<ErStorage> {
     void deleteMany(List<String> esIdList) throws Exception;
     void updateOne(ErStorage erStorage) throws Exception;
     Page<ErStorage> selectByPage(Integer pageIndex, Integer pageSize);
+    List<ErStorage> selectAll();
+    List<String> selectEsNoList();
 }

@@ -6,13 +6,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zxl.materialStorage.common.api.ApiResult;
 import com.zxl.materialStorage.model.pojo.EssSpace;
 import com.zxl.materialStorage.service.storageManage.EsssService;
-import jdk.jpackage.internal.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @className: EsController
@@ -87,5 +85,15 @@ public class EsssController {
     public ApiResult<Page<EssSpace>> selectByPage(@RequestParam(value = "pageIndex",defaultValue = "1") Integer pageIndex,
                                                   @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
         return ApiResult.success(esssService.selectByPage(pageIndex,pageSize));
+    }
+
+    @GetMapping("/selectAll")
+    public ApiResult<List<EssSpace>> selectAll(){
+        return ApiResult.success(esssService.selectAll());
+    }
+
+    @GetMapping("/selectEsssNoList")
+    public ApiResult<List<String>> selectEsssNoList(){
+        return ApiResult.success(esssService.selectEsssNoList());
     }
 }

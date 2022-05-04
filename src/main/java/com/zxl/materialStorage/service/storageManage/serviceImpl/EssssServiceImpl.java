@@ -49,6 +49,9 @@ public class EssssServiceImpl extends ServiceImpl<EssssMapper, EsssShelves> impl
 
     @Override
     public void deleteMany(List<String> essssIdList) {
+        if (ObjectUtil.isEmpty(essssIdList)){
+            return;
+        }
         removeBatchByIds(essssIdList);
     }
 
@@ -67,5 +70,10 @@ public class EssssServiceImpl extends ServiceImpl<EssssMapper, EsssShelves> impl
     @Override
     public Page<EsssShelves> selectByPage(Integer pageIndex, Integer pageSize) {
         return page(new Page<>(pageIndex,pageSize));
+    }
+
+    @Override
+    public List<EsssShelves> selectAll() {
+        return list();
     }
 }
