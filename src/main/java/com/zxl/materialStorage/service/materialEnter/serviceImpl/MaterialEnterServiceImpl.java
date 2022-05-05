@@ -50,9 +50,10 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
             throw new Exception("已存在此编号的入库物资");
         }
         //补全
+        Double priceCount = materialEnter.getEmePriceUnit() * materialEnter.getEmeNumberCount();
         EsssShelves esssShelves = essssService.getOne(new QueryWrapper<EsssShelves>().lambda().eq(EsssShelves::getEssssNo, materialEnter.getEssssNo()));
         materialEnter.setEsNo(esssShelves.getEsNo()).setEssNo(esssShelves.getEsssNo()).setEsssNo(esssShelves.getEsssNo())
-                .setEmeTimeValue(SystemUtil.getTime()).setEmeTs(SystemUtil.getTime());
+                .setEmePriceCount(priceCount).setEmeTimeValue(SystemUtil.getTime()).setEmeTs(SystemUtil.getTime());
         save(materialEnter);
     }
 
@@ -71,9 +72,10 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateOne(MaterialEnter materialEnter) {
+        Double priceCount = materialEnter.getEmePriceUnit() * materialEnter.getEmeNumberCount();
         EsssShelves esssShelves = essssService.getOne(new QueryWrapper<EsssShelves>().lambda().eq(EsssShelves::getEssssNo, materialEnter.getEssssNo()));
         materialEnter.setEsNo(esssShelves.getEsNo()).setEssNo(esssShelves.getEssNo()).setEsssNo(esssShelves.getEsssNo())
-                .setEmeTs(SystemUtil.getTime());
+                .setEmePriceCount(priceCount).setEmeTs(SystemUtil.getTime());
         updateById(materialEnter);
     }
 
@@ -135,7 +137,7 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
         for (EsssShelves esssShelves : shelvesList) {
             essssNoList.add(esssShelves.getEssssNo());
         }
-        map.put("emaNos",essssNoList);
+        map.put("essssNos",essssNoList);
 
         List<MaterialType> materialTypeList = materialTypeService.list();
         List<String> emtNoList = new ArrayList<>();
