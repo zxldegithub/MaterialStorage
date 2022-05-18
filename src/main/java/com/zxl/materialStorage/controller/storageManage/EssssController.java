@@ -1,10 +1,14 @@
 package com.zxl.materialStorage.controller.storageManage;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.sun.tools.javac.util.DefinedBy;
 import com.zxl.materialStorage.common.api.ApiResult;
 import com.zxl.materialStorage.model.pojo.EsssShelves;
+import com.zxl.materialStorage.model.pojo.MaterialEnter;
+import com.zxl.materialStorage.service.materialEnter.MaterialEnterService;
 import com.zxl.materialStorage.service.storageManage.EssssService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +18,7 @@ import java.util.List;
 
 /**
  * @className: EsController
- * @description: TODO
+ * @description: EsController
  * @author: ZhangXiaolei
  * @date: 2022/4/11
  **/
@@ -24,6 +28,9 @@ import java.util.List;
 public class EssssController {
     @Autowired
     private EssssService essssService;
+
+    @Autowired
+    private MaterialEnterService materialEnterService;
 
     @RequestMapping("/insertNewOne")
     public ApiResult<Object> insertNewOne(@RequestBody EsssShelves esssShelves){
@@ -45,6 +52,12 @@ public class EssssController {
             if (StringUtils.isEmpty(essssId)){
                 return ApiResult.blank();
             }
+            //若存在下级物资，则拒绝删除
+            EsssShelves byId = essssService.getById(essssId);
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssssNo, byId.getEssssNo()));
+            if (ObjectUtil.isNotEmpty(materialEnterList)){
+                return ApiResult.error();
+            }
             essssService.deleteOne(essssId);
         } catch (Exception e) {
             log.error("删除货架出错",e);
@@ -58,6 +71,14 @@ public class EssssController {
         try {
             if (ObjectUtil.isEmpty(essssIdList)){
                 return ApiResult.blank();
+            }
+            //若存在下级物资，则拒绝删除
+            List<EsssShelves> esssShelvesList = essssService.listByIds(essssIdList);
+            for (EsssShelves shelves : esssShelvesList) {
+                List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssssNo, shelves.getEssssNo()));
+                if (ObjectUtil.isNotEmpty(materialEnterList)){
+                    return ApiResult.error();
+                }
             }
             essssService.deleteMany(essssIdList);
         } catch (Exception e) {

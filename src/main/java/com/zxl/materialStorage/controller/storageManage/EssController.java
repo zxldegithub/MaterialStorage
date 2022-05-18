@@ -1,11 +1,14 @@
 package com.zxl.materialStorage.controller.storageManage;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zxl.materialStorage.common.api.ApiResult;
 import com.zxl.materialStorage.model.pojo.ErStorage;
 import com.zxl.materialStorage.model.pojo.EsStoreroom;
+import com.zxl.materialStorage.model.pojo.MaterialEnter;
+import com.zxl.materialStorage.service.materialEnter.MaterialEnterService;
 import com.zxl.materialStorage.service.storageManage.EsService;
 import com.zxl.materialStorage.service.storageManage.EssService;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +31,9 @@ import java.util.Set;
 public class EssController {
     @Autowired
     private EssService essService;
+
     @Autowired
-    private EsService esService;
+    private MaterialEnterService materialEnterService;
 
     @PostMapping("/insertNewOne")
     public ApiResult<Object> insertNewOne(@RequestBody EsStoreroom esStoreroom){
@@ -51,6 +55,13 @@ public class EssController {
             if (StringUtils.isEmpty(essId)){
                 return ApiResult.blank();
             }
+            //若存在下级物资依赖，则拒绝删除
+            EsStoreroom byId = essService.getById(essId);
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssNo, byId.getEssNo()));
+            if (ObjectUtil.isNotEmpty(materialEnterList)){
+                return ApiResult.error();
+            }
+            //执行单个删除操作
             essService.deleteOne(essId);
         } catch (Exception e) {
             log.error("删除仓库失败",e);
@@ -65,6 +76,15 @@ public class EssController {
             if (ObjectUtil.isEmpty(essIdList)){
                 return ApiResult.blank();
             }
+            //若存在下级物资依赖，则拒绝删除
+            List<EsStoreroom> esStoreroomList = essService.listByIds(essIdList);
+            for (EsStoreroom storeroom : esStoreroomList) {
+                List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssNo, storeroom.getEssNo()));
+                if (ObjectUtil.isNotEmpty(materialEnterList)){
+                    return ApiResult.error();
+                }
+            }
+            //执行批量删除操作
             essService.deleteMany(essIdList);
         } catch (Exception e) {
             log.error("批量删除仓库失败",e);

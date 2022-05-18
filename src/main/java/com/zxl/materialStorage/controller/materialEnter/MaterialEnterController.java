@@ -105,6 +105,11 @@ public class MaterialEnterController {
         return ApiResult.success(materialEnterService.selectAlready());
     }
 
+    @GetMapping("/selectAccept")
+    public ApiResult<List<MaterialEnter>> selectAccept(){
+        return ApiResult.success(materialEnterService.selectAccept());
+    }
+
     @PostMapping("/materialAccept")
     public ApiResult<Object> materialAccept(@RequestBody MaterialEnter materialEnter){
         try {

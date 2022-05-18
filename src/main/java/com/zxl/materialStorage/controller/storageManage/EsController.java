@@ -9,14 +9,11 @@ import com.zxl.materialStorage.service.storageManage.EsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @className: EsController
- * @description: TODO
+ * @description: EsController
  * @author: ZhangXiaolei
  * @date: 2022/4/11
  **/

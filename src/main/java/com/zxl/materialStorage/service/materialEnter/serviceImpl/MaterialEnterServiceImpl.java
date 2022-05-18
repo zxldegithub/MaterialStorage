@@ -9,6 +9,8 @@ import com.zxl.materialStorage.service.materialEnter.MaterialAttributeService;
 import com.zxl.materialStorage.service.materialEnter.MaterialEnterService;
 import com.zxl.materialStorage.service.materialEnter.MaterialPackingService;
 import com.zxl.materialStorage.service.materialEnter.MaterialTypeService;
+import com.zxl.materialStorage.service.storageManage.EssService;
+import com.zxl.materialStorage.service.storageManage.EsssService;
 import com.zxl.materialStorage.service.storageManage.EssssService;
 import com.zxl.materialStorage.util.SystemUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +18,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @className: MaterialEnterServiceImpl
@@ -31,6 +30,12 @@ import java.util.Map;
 public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, MaterialEnter> implements MaterialEnterService {
     @Autowired
     private EssssService essssService;
+
+    @Autowired
+    private EsssService esssService;
+
+    @Autowired
+    private EssService essService;
 
     @Autowired
     private MaterialTypeService materialTypeService;
@@ -82,7 +87,18 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
     @Override
     @Transactional(rollbackFor = Exception.class)
     @Async("threadPool")
-    public void updateEmtNos(MaterialType byId, MaterialType materialType){
+    public void updateEsNos(String esNoOld, String esNoNew) {
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEsNo, esNoOld));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEmtNo(esNoNew).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEmtNos(MaterialType byId, MaterialType materialType) {
         List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmtNo, byId.getEmtNo()));
         for (MaterialEnter materialEnter : materialEnterList) {
             materialEnter.setEmtNo(materialType.getEmtNo()).setEmeTs(SystemUtil.getTime());
@@ -131,27 +147,27 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
 
     @Override
     public Map<String, List<String>> getAllNeedInfo() {
-        Map<String,List<String>> map = new HashMap<>();
+        Map<String, List<String>> map = new HashMap<>();
         List<EsssShelves> shelvesList = essssService.list();
         List<String> essssNoList = new ArrayList<>();
         for (EsssShelves esssShelves : shelvesList) {
             essssNoList.add(esssShelves.getEssssNo());
         }
-        map.put("essssNos",essssNoList);
+        map.put("essssNos", essssNoList);
 
         List<MaterialType> materialTypeList = materialTypeService.list();
         List<String> emtNoList = new ArrayList<>();
         for (MaterialType materialType : materialTypeList) {
             emtNoList.add(materialType.getEmtNo());
         }
-        map.put("emtNos",emtNoList);
+        map.put("emtNos", emtNoList);
 
         List<MaterialPacking> materialPackingList = materialPackingService.list();
         List<String> empNoList = new ArrayList<>();
         for (MaterialPacking materialPacking : materialPackingList) {
             empNoList.add(materialPacking.getEmpNo());
         }
-        map.put("empNos",empNoList);
+        map.put("empNos", empNoList);
 
         List<MaterialAttribute> materialAttributeList = materialAttributeService.list();
         List<String> emaNoList = new ArrayList<>();
@@ -160,9 +176,95 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
             emaNoList.add(materialAttribute.getEmaNo());
             emaNameList.add(materialAttribute.getEmaName());
         }
-        map.put("emaNos",emaNoList);
-        map.put("emaNames",emaNameList);
+        map.put("emaNos", emaNoList);
+        map.put("emaNames", emaNameList);
 
         return map;
+    }
+
+    @Override
+    public List<MaterialEnter> selectAccept() {
+        return list(new QueryWrapper<MaterialEnter>().eq("eme_is_accept", true));
+    }
+
+    @Override
+    public void updateEsNosByDel(List<String> esNoList) {
+        LinkedList<MaterialEnter> materialEnters = new LinkedList<>();
+        for (String esNo : esNoList) {
+            List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEsNo, esNo));
+            for (MaterialEnter materialEnter : materialEnterList) {
+                materialEnter.setEsNo(null).setEmeTs(SystemUtil.getTime());
+            }
+            materialEnters.addAll(materialEnterList);
+        }
+        updateBatchById(materialEnters);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEssNos(String essNoOld, String essNoNew) {
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssNo, essNoOld));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEssNo(essNoNew).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEsNosWithEssNo(String esNoOld, String esNoNew, String essNo) {
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssNo, essNo).eq(MaterialEnter::getEsNo, esNoOld));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEsNo(esNoNew).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEsssNos(String esssNoOld, String esssNoNew) {
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEsssNo, esssNoOld));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEsssNo(esssNoNew).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEssNosAndEsNosWithEsssNo(String essNoOld, String essNoNew, String esssNo) {
+        EsStoreroom esStoreroom = essService.getOne(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEssNo, essNoNew));
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssNo, essNoOld).eq(MaterialEnter::getEsssNo, esssNo));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEsNo(esStoreroom.getEsNo()).setEssNo(essNoNew).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEsNosAndEssNosAndEsssNosWithEssssNo(String esssNoOld, String esssNoNew, String essssNo) {
+        EssSpace essSpace = esssService.getOne(new QueryWrapper<EssSpace>().lambda().eq(EssSpace::getEsssNo, esssNoNew));
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEsssNo, esssNoOld).eq(MaterialEnter::getEssssNo, essssNo));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEsNo(essSpace.getEsNo()).setEssNo(essSpace.getEssNo()).setEsssNo(essSpace.getEsssNo()).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @Async("threadPool")
+    public void updateEssssNos(String essssNoOld, String essssNoNew) {
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEssssNo, essssNoOld));
+        for (MaterialEnter materialEnter : materialEnterList) {
+            materialEnter.setEssssNo(essssNoNew).setEmeTs(SystemUtil.getTime());
+        }
+        updateBatchById(materialEnterList);
     }
 }
