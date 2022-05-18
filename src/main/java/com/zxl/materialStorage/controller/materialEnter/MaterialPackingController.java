@@ -55,10 +55,11 @@ public class MaterialPackingController {
             }
             //存在引用，拒绝删除，直接返回
             MaterialPacking byId = materialPackingService.getById(empId);
-            MaterialEnter existMaterialEnter = materialEnterService.getOne(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmpNo, byId.getEmpNo()));
-            if (ObjectUtil.isNotNull(existMaterialEnter)){
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmpNo, byId.getEmpNo()));
+            if (ObjectUtil.isNotEmpty(materialEnterList)){
                 return ApiResult.error();
             }
+
             materialPackingService.deleteOne(empId);
         } catch (Exception e) {
             log.error("删除物资打包方式出错",e);
@@ -73,17 +74,15 @@ public class MaterialPackingController {
             if (ObjectUtil.isEmpty(empIdList)){
                 return ApiResult.blank();
             }
+            //存在引用则拒绝删除
             List<MaterialPacking> materialPackingList = materialPackingService.listByIds(empIdList);
-            List<String> empNoList = new ArrayList<>();
             for (MaterialPacking materialPacking : materialPackingList) {
-                empNoList.add(materialPacking.getEmpNo());
+                List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmpNo, materialPacking.getEmpNo()));
+                if (ObjectUtil.isNotEmpty(materialEnterList)){
+                    return ApiResult.error();
+                }
             }
-            Map<String, Object> columnMap = new HashMap<>();
-            columnMap.put("emp_no",empNoList);
-            List<MaterialEnter> materialEnters = materialEnterService.listByMap(columnMap);
-            if (ObjectUtil.isNotEmpty(materialEnters)){
-                return ApiResult.error();
-            }
+
             materialPackingService.deleteMany(empIdList);
         } catch (Exception e) {
             log.error("批量删除物资打包方式出错",e);

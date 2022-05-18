@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @className: ThreadPoolConfig
- * @description: TODO
+ * @description: ThreadPoolConfig
  * @author: ZhangXiaolei
  * @date: 2022/4/29
  **/

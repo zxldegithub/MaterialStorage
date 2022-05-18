@@ -55,10 +55,11 @@ public class MaterialTypeController {
             }
             //存在引用，拒绝删除
             MaterialType byId = materialTypeService.getById(emtId);
-            MaterialEnter existMaterialEnter = materialEnterService.getOne(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmtNo, byId.getEmtNo()));
-            if (ObjectUtil.isNotNull(existMaterialEnter)) {
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmtNo, byId.getEmtNo()));
+            if (ObjectUtil.isNotEmpty(materialEnterList)) {
                 return ApiResult.error();
             }
+
             materialTypeService.deleteOne(emtId);
         } catch (Exception e) {
             log.error("删除物资类型出错", e);
@@ -75,16 +76,13 @@ public class MaterialTypeController {
             }
             //存在引用，拒绝删除
             List<MaterialType> materialTypeList = materialTypeService.listByIds(emtIdList);
-            List<String> emtNoList = new ArrayList<>();
             for (MaterialType materialType : materialTypeList) {
-                emtNoList.add(materialType.getEmtNo());
+                List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmtNo, materialType.getEmtNo()));
+                if (ObjectUtil.isNotEmpty(materialEnterList)){
+                    return ApiResult.error();
+                }
             }
-            Map<String, Object> columnMap = new HashMap<>();
-            columnMap.put("emt_no",emtNoList);
-            List<MaterialEnter> materialEnters = materialEnterService.listByMap(columnMap);
-            if (ObjectUtil.isNotEmpty(materialEnters)){
-                return ApiResult.error();
-            }
+
             materialTypeService.deleteMany(emtIdList);
         } catch (Exception e) {
             log.error("批量删除物资类型出错", e);
@@ -101,14 +99,14 @@ public class MaterialTypeController {
             }
             //异步更新引用
             MaterialType byId = materialTypeService.getById(materialType.getEmtId());
-            if (!byId.getEmtNo().equals(materialType.getEmtNo())){
-                materialEnterService.updateEmtNos(byId,materialType);
+            if (!byId.getEmtNo().equals(materialType.getEmtNo())) {
+                materialEnterService.updateEmtNos(byId, materialType);
             }
 
             //再更新自己
             materialTypeService.updateOne(materialType);
         } catch (Exception e) {
-            log.error("更新物资类型出错",e);
+            log.error("更新物资类型出错", e);
             return ApiResult.error(500, "更新物资类型出错", e);
         }
         return ApiResult.success();

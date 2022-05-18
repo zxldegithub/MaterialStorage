@@ -47,7 +47,6 @@ public class MaterialAttributeController {
         return ApiResult.success();
     }
 
-    //TODO 若存在引用则拒绝删除
     @DeleteMapping("/deleteOne")
     public ApiResult<Object> deleteOne(@RequestParam(value = "emaId") String emaId) {
         try {
@@ -56,10 +55,11 @@ public class MaterialAttributeController {
             }
             //存在引用，拒绝删除，直接返回
             MaterialAttribute byId = materialAttributeService.getById(emaId);
-            MaterialEnter existMaterialEnter = materialEnterService.getOne(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmaNo, byId.getEmaNo()));
-            if (ObjectUtil.isNotNull(existMaterialEnter)){
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmaNo, byId.getEmaNo()));
+            if (ObjectUtil.isNotEmpty(materialEnterList)){
                 return ApiResult.error();
             }
+
             materialAttributeService.deleteOne(emaId);
         } catch (Exception e) {
             log.error("删除物资属性出错", e);
@@ -68,7 +68,6 @@ public class MaterialAttributeController {
         return ApiResult.success();
     }
 
-    //TODO 若存在引用则拒绝删除
     @DeleteMapping("/deleteMany")
     public ApiResult<Object> deleteMany(@RequestBody List<String> emaIdList) {
         try {
@@ -77,16 +76,13 @@ public class MaterialAttributeController {
             }
             //存在引用，拒绝删除，直接返回
             List<MaterialAttribute> materialAttributeList = materialAttributeService.listByIds(emaIdList);
-            List<String> emaNoList = new ArrayList<>();
             for (MaterialAttribute materialAttribute : materialAttributeList) {
-                emaNoList.add(materialAttribute.getEmaNo());
+                List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmaNo, materialAttribute.getEmaNo()));
+                if (ObjectUtil.isNotEmpty(materialEnterList)){
+                    return ApiResult.error();
+                }
             }
-            Map<String, Object> columnMap = new HashMap<>();
-            columnMap.put("ema_no",emaNoList);
-            List<MaterialEnter> materialEnters = materialEnterService.listByMap(columnMap);
-            if (ObjectUtil.isNotEmpty(materialEnters)){
-                return ApiResult.error();
-            }
+
             materialAttributeService.deleteMany(emaIdList);
         } catch (Exception e) {
             log.error("批量删除物资属性出错", e);
