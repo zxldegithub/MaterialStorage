@@ -99,6 +99,7 @@ public class EssController {
             if (ObjectUtil.isNull(esStoreroom)){
                 return ApiResult.blank();
             }
+
             essService.updateOne(esStoreroom);
         } catch (Exception e) {
             log.error("更新仓库失败",e);

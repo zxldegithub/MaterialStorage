@@ -95,6 +95,7 @@ public class EsssController {
             if (ObjectUtil.isNull(essSpace)){
                 return ApiResult.blank();
             }
+
             esssService.updateOne(essSpace);
         } catch (Exception e) {
             log.error("更新获取信息失败");

@@ -94,6 +94,7 @@ public class EssssController {
             if (ObjectUtil.isNull(esssShelves)){
                 return ApiResult.blank();
             }
+
             essssService.updateOne(esssShelves);
         } catch (Exception e) {
             log.error("更新货架信息出错",e);

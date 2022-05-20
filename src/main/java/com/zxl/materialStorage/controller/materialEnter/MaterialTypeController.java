@@ -97,8 +97,15 @@ public class MaterialTypeController {
             if (ObjectUtil.isNull(materialType)) {
                 return ApiResult.blank();
             }
-            //异步更新引用
             MaterialType byId = materialTypeService.getById(materialType.getEmtId());
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmtNo, byId.getEmtNo()));
+            //存在已验收的物资，拒绝更新
+            for (MaterialEnter materialEnter : materialEnterList) {
+                if (materialEnter.isEmeIsAccept()){
+                    return ApiResult.error();
+                }
+            }
+            //异步更新引用
             if (!byId.getEmtNo().equals(materialType.getEmtNo())) {
                 materialEnterService.updateEmtNos(byId, materialType);
             }

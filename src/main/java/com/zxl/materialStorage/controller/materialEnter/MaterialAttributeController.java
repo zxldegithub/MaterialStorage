@@ -59,7 +59,6 @@ public class MaterialAttributeController {
             if (ObjectUtil.isNotEmpty(materialEnterList)){
                 return ApiResult.error();
             }
-
             materialAttributeService.deleteOne(emaId);
         } catch (Exception e) {
             log.error("删除物资属性出错", e);
@@ -91,15 +90,21 @@ public class MaterialAttributeController {
         return ApiResult.success();
     }
 
-    //TODO 若存在引用，则更新引用
     @PostMapping("/updateOne")
     public ApiResult<Object> updateOne(@RequestBody MaterialAttribute materialAttribute) {
         try {
             if (ObjectUtil.isNull(materialAttribute)) {
                 return ApiResult.blank();
             }
-            //异步更新引用
             MaterialAttribute byId = materialAttributeService.getById(materialAttribute.getEmaId());
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmaNo, byId.getEmaNo()));
+            //存在已验收的物资，拒绝更新
+            for (MaterialEnter materialEnter : materialEnterList) {
+                if (materialEnter.isEmeIsAccept()){
+                    return ApiResult.error();
+                }
+            }
+            //异步更新引用
             if (!byId.getEmaNo().equals(materialAttribute.getEmaNo())){
                 materialEnterService.updateEmaNos(byId,materialAttribute);
             }

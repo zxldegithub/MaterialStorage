@@ -13,8 +13,8 @@ import lombok.Data;
 @AllArgsConstructor
 public enum ApiCode implements ICode{
     SUCCESS(2,"操作成功"),
-    ERROR(1,"不允许作此操作"),
-    BLANK(0,"参数为空");
+    ERROR(1,"存在上下级依赖，拒绝删除，请先去除上下级依赖"),
+    BLANK(0,"缺少必要的参数信息");
 
     private final Integer code;
     private final String message;

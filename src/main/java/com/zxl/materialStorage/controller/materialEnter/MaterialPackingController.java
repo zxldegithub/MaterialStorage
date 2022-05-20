@@ -91,15 +91,21 @@ public class MaterialPackingController {
         return ApiResult.success();
     }
 
-    //TODO 若存在引用，则更新引用
     @PostMapping("/updateOne")
     public ApiResult<Object> updateOne(@RequestBody MaterialPacking materialPacking){
         try {
             if (ObjectUtil.isNull(materialPacking)){
                 return ApiResult.blank();
             }
-            //异步更新引用
             MaterialPacking byId = materialPackingService.getById(materialPacking.getEmpId());
+            List<MaterialEnter> materialEnterList = materialEnterService.list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::getEmpNo, byId.getEmpNo()));
+            //存在已验收的物资，拒绝更新
+            for (MaterialEnter materialEnter : materialEnterList) {
+                if (materialEnter.isEmeIsAccept()){
+                    return ApiResult.error();
+                }
+            }
+            //异步更新引用
             if (!byId.getEmpNo().equals(materialPacking.getEmpNo())){
                 materialEnterService.updateEmpNos(byId,materialPacking);
             }
