@@ -12,7 +12,7 @@ import lombok.experimental.Accessors;
 
 /**
  * @className: MaterialType
- * @description: TODO
+ * @description: MaterialType
  * @author: ZhangXiaolei
  * @date: 2022/5/3
  **/

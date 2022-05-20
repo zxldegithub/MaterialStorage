@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 /**
  * @className: EssssMapper
- * @description: TODO
+ * @description: EssssMapper
  * @author: ZhangXiaolei
  * @date: 2022/4/28
  **/

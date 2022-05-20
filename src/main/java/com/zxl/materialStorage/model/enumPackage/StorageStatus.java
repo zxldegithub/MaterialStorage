@@ -5,7 +5,7 @@ import lombok.Getter;
 
 /**
  * @className: StorageStatus
- * @description: TODO
+ * @description: StorageStatus
  * @author: ZhangXiaolei
  * @date: 2022/4/11
  **/
