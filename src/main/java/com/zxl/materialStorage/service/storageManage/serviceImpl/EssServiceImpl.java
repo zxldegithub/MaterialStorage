@@ -38,9 +38,11 @@ public class EssServiceImpl extends ServiceImpl<EssMapper, EsStoreroom> implemen
     private EsssService esssService;
 
     @Autowired
+    @Lazy
     private EssssService essssService;
 
     @Autowired
+    @Lazy
     private MaterialEnterService materialEnterService;
 
     @Override

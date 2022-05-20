@@ -14,6 +14,7 @@ import com.zxl.materialStorage.service.storageManage.EsssService;
 import com.zxl.materialStorage.service.storageManage.EssssService;
 import com.zxl.materialStorage.util.SystemUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class EssssServiceImpl extends ServiceImpl<EssssMapper, EsssShelves> impl
     private EssService essService;
 
     @Autowired
+    @Lazy
     private MaterialEnterService materialEnterService;
 
     @Override

@@ -40,12 +40,15 @@ public class EsServiceImpl extends ServiceImpl<EsMapper, ErStorage> implements E
     private EssService essService;
 
     @Autowired
+    @Lazy
     private EsssService esssService;
 
     @Autowired
+    @Lazy
     private EssssService essssService;
 
     @Autowired
+    @Lazy
     private MaterialEnterService materialEnterService;
 
     @Override

@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zxl.materialStorage.mapper.storageManage.EsssMapper;
 import com.zxl.materialStorage.model.pojo.EsStoreroom;
 import com.zxl.materialStorage.model.pojo.EssSpace;
-import com.zxl.materialStorage.model.pojo.EsssShelves;
 import com.zxl.materialStorage.service.materialEnter.MaterialEnterService;
 import com.zxl.materialStorage.service.storageManage.EssService;
 import com.zxl.materialStorage.service.storageManage.EsssService;
@@ -38,6 +37,7 @@ public class EsssServiceImpl extends ServiceImpl<EsssMapper, EssSpace> implement
     private EssssService essssService;
 
     @Autowired
+    @Lazy
     private MaterialEnterService materialEnterService;
 
     @Override
