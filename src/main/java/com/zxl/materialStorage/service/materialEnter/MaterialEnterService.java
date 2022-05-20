@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @className: MaterialEnterService
@@ -40,7 +41,7 @@ public interface MaterialEnterService extends IService<MaterialEnter> {
 
     Map<String, List<String>> getAllNeedInfo();
 
-    List<MaterialEnter> selectAccept();
+    Set<MaterialEnter> selectAccept();
 
     void updateEsNosByDel(List<String> esNoList);
 

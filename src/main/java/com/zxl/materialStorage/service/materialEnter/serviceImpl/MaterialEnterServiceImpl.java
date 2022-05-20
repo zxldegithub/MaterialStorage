@@ -14,11 +14,14 @@ import com.zxl.materialStorage.service.storageManage.EsssService;
 import com.zxl.materialStorage.service.storageManage.EssssService;
 import com.zxl.materialStorage.util.SystemUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @className: MaterialEnterServiceImpl
@@ -45,6 +48,9 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
 
     @Autowired
     private MaterialAttributeService materialAttributeService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -82,6 +88,12 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
         materialEnter.setEsNo(esssShelves.getEsNo()).setEssNo(esssShelves.getEssNo()).setEsssNo(esssShelves.getEsssNo())
                 .setEmePriceCount(priceCount).setEmeTs(SystemUtil.getTime());
         updateById(materialEnter);
+        List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::isEmeIsAccept, true));
+        redisTemplate.delete("materialEnters");
+        for (MaterialEnter enter : materialEnterList) {
+            redisTemplate.opsForSet().add("materialEnters", enter);
+        }
+        redisTemplate.expire("materialEnters", 120, TimeUnit.MINUTES);
     }
 
     @Override
@@ -183,8 +195,25 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
     }
 
     @Override
-    public List<MaterialEnter> selectAccept() {
-        return list(new QueryWrapper<MaterialEnter>().eq("eme_is_accept", true));
+    public Set<MaterialEnter> selectAccept() {
+        //利用缓存
+        SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
+        Set<Object> materialEnters = setOperations.members("materialEnters");
+        Set<MaterialEnter> materialEnterSet = new HashSet<>();
+        if (ObjectUtil.isNotEmpty(materialEnters)) {
+            for (Object materialEnter : materialEnters) {
+                materialEnterSet.add((MaterialEnter) materialEnter);
+            }
+        } else {
+            List<MaterialEnter> materialEnterList = list(new QueryWrapper<MaterialEnter>().lambda().eq(MaterialEnter::isEmeIsAccept, true));
+            for (MaterialEnter materialEnter : materialEnterList) {
+                setOperations.add("materialEnters", materialEnter);
+                materialEnterSet.add(materialEnter);
+            }
+            redisTemplate.expire("materialEnters", 120, TimeUnit.MINUTES);
+        }
+
+        return materialEnterSet;
     }
 
     @Override
