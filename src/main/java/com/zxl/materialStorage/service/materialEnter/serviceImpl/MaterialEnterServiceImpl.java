@@ -93,7 +93,7 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
         for (MaterialEnter enter : materialEnterList) {
             redisTemplate.opsForSet().add("materialEnters", enter);
         }
-        redisTemplate.expire("materialEnters", 120, TimeUnit.MINUTES);
+        redisTemplate.expire("materialEnters", 24, TimeUnit.HOURS);
     }
 
     @Override
@@ -210,7 +210,7 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
                 setOperations.add("materialEnters", materialEnter);
                 materialEnterSet.add(materialEnter);
             }
-            redisTemplate.expire("materialEnters", 120, TimeUnit.MINUTES);
+            redisTemplate.expire("materialEnters", 24, TimeUnit.HOURS);
         }
 
         return materialEnterSet;
