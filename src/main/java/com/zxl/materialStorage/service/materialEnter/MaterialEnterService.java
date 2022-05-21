@@ -56,4 +56,6 @@ public interface MaterialEnterService extends IService<MaterialEnter> {
     void updateEsNosAndEssNosAndEsssNosWithEssssNo(String esssNoOld, String esssNoNew, String essssNo);
 
     void updateEssssNos(String essssNoOld, String essssNoNew);
+
+    Map<String,Object> getAllInfo(MaterialEnter materialEnter);
 }

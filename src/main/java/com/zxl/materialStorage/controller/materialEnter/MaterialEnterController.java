@@ -129,4 +129,9 @@ public class MaterialEnterController {
     public ApiResult<Map<String, List<String>>> getAllNeedInfo(){
         return ApiResult.success(materialEnterService.getAllNeedInfo());
     }
+
+    @PostMapping("/getAllInfo")
+    public ApiResult<Map<String,Object>> getAllInfo(@RequestBody MaterialEnter materialEnter) {
+        return ApiResult.success(materialEnterService.getAllInfo(materialEnter));
+    }
 }

@@ -5,16 +5,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @className: VerificationCode
- * @description: VerificationCode
+ * @className: LoginDto
+ * @description: TODO
  * @author: ZhangXiaolei
- * @date: 2022/5/17
+ * @date: 2022/5/21
  **/
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class VerificationCodeDto {
-    private String telNumber;
-    private String telCode;
+public class LoginDto {
+    private String email;
+    private String verifyCode;
 }

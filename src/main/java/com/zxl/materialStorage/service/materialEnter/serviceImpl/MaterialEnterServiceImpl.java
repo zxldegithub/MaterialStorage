@@ -9,6 +9,7 @@ import com.zxl.materialStorage.service.materialEnter.MaterialAttributeService;
 import com.zxl.materialStorage.service.materialEnter.MaterialEnterService;
 import com.zxl.materialStorage.service.materialEnter.MaterialPackingService;
 import com.zxl.materialStorage.service.materialEnter.MaterialTypeService;
+import com.zxl.materialStorage.service.storageManage.EsService;
 import com.zxl.materialStorage.service.storageManage.EssService;
 import com.zxl.materialStorage.service.storageManage.EsssService;
 import com.zxl.materialStorage.service.storageManage.EssssService;
@@ -39,6 +40,9 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
 
     @Autowired
     private EssService essService;
+
+    @Autowired
+    private EsService esService;
 
     @Autowired
     private MaterialTypeService materialTypeService;
@@ -295,5 +299,28 @@ public class MaterialEnterServiceImpl extends ServiceImpl<MaterialEnterMapper, M
             materialEnter.setEssssNo(essssNoNew).setEmeTs(SystemUtil.getTime());
         }
         updateBatchById(materialEnterList);
+    }
+
+    @Override
+    public Map<String, Object> getAllInfo(MaterialEnter materialEnter) {
+        ErStorage erStorage = esService.getOne(new QueryWrapper<ErStorage>().lambda().eq(ErStorage::getEsNo, materialEnter.getEsNo()));
+        EsStoreroom esStoreroom = essService.getOne(new QueryWrapper<EsStoreroom>().lambda().eq(EsStoreroom::getEssNo, materialEnter.getEssNo()));
+        EssSpace essSpace = esssService.getOne(new QueryWrapper<EssSpace>().lambda().eq(EssSpace::getEsssNo, materialEnter.getEsssNo()));
+        EsssShelves esssShelves = essssService.getOne(new QueryWrapper<EsssShelves>().lambda().eq(EsssShelves::getEssssNo, materialEnter.getEssssNo()));
+        MaterialType materialType = materialTypeService.getOne(new QueryWrapper<MaterialType>().lambda().eq(MaterialType::getEmtNo, materialEnter.getEmtNo()));
+        MaterialPacking materialPacking = materialPackingService.getOne(new QueryWrapper<MaterialPacking>().lambda().eq(MaterialPacking::getEmpNo, materialEnter.getEmpNo()));
+        MaterialAttribute materialAttribute = materialAttributeService.getOne(new QueryWrapper<MaterialAttribute>().lambda().eq(MaterialAttribute::getEmaNo, materialEnter.getEmaNo()));
+        MaterialEnter byId = getById(materialEnter.getEmeId());
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("erStorage",erStorage);
+        map.put("esStoreroom",esStoreroom);
+        map.put("essSpace",essSpace);
+        map.put("esssShelves",esssShelves);
+        map.put("materialType",materialType);
+        map.put("materialPacking",materialPacking);
+        map.put("materialAttribute",materialAttribute);
+        map.put("byId",byId);
+        return map;
     }
 }

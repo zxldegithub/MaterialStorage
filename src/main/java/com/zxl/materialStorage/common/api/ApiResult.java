@@ -70,4 +70,8 @@ public class ApiResult<T> implements Serializable {
     public static <T> ApiResult<T> blank(){
         return new ApiResult<T>(ApiCode.BLANK.getCode(), ApiCode.BLANK.getMessage(),null);
     }
+
+    public static <T> ApiResult<T> blank(String message){
+        return new ApiResult<T>(ApiCode.BLANK.getCode(), message,null);
+    }
 }

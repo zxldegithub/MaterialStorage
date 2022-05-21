@@ -1,4 +1,9 @@
 spring:
+  mail:
+    host: smtp.163.com
+    username: zxldewyyx@163.com
+    password: YGDYWNUSFJUMDWSS
+    port: 25
   datasource:
     url: jdbc:mysql://114.215.41.41:3306/mm_er?useSSL=false&useUnicode=true&characterEncoding=utf8
     username: root
