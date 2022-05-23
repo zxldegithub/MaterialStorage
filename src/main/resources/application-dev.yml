@@ -19,7 +19,7 @@ spring:
       pool:
         max-idle: 8
         max-active: 8
-        max-wait: 30000
+        max-wait: -1
         min-idle: 0
 
 server:
